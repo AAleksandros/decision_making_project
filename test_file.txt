@@ -1,0 +1,2041 @@
+Open In Colab
+Work in Decision Making Systems
+
+Groups of 3 people deadline: 18/6/2023
+
+In this paper we will manage and analyze open and synthetic data to draw conclusions, make recommendations and make decisions about the selection of music bands, as well as the purchase/sale of records. To extract the opendata we will use the Last.fm Music Discovery API [1] and/or the discogs API [2]
+
+[1] https://www.last.fm/api
+
+[2] https://www.discogs.com/developers
+
+
+Required modules installation.
+
+
+!pip install mysql.connector
+!pip install names
+!pip install statsmodels
+!pip install pmdarima
+!pip install deap
+     
+Collecting mysql.connector
+  Downloading mysql-connector-2.2.9.tar.gz (11.9 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 11.9/11.9 MB 58.4 MB/s eta 0:00:00
+  Preparing metadata (setup.py) ... done
+Building wheels for collected packages: mysql.connector
+  Building wheel for mysql.connector (setup.py) ... done
+  Created wheel for mysql.connector: filename=mysql_connector-2.2.9-cp310-cp310-linux_x86_64.whl size=247953 sha256=921b3a2ae8d3be2020dab2bc626de3c5cc37f1660f9427db761ba3d946e5019d
+  Stored in directory: /root/.cache/pip/wheels/76/48/9b/da67ff1a18fe8e9d428f9b1a177716d4a7d363d2bbe83bf6cf
+Successfully built mysql.connector
+Installing collected packages: mysql.connector
+Successfully installed mysql.connector-2.2.9
+Collecting names
+  Downloading names-0.3.0.tar.gz (789 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 789.1/789.1 kB 13.4 MB/s eta 0:00:00
+  Preparing metadata (setup.py) ... done
+Building wheels for collected packages: names
+  Building wheel for names (setup.py) ... done
+  Created wheel for names: filename=names-0.3.0-py3-none-any.whl size=803682 sha256=23a8d3203cef542938bce18eae7d0ae8bfefd3f3b6375ad2f7efd8c09df59354
+  Stored in directory: /root/.cache/pip/wheels/fc/9a/6f/78f4282bbcaa2d8c678b73c54c0bb1b7a04009f0d7cec79fce
+Successfully built names
+Installing collected packages: names
+Successfully installed names-0.3.0
+Requirement already satisfied: statsmodels in /usr/local/lib/python3.10/dist-packages (0.13.5)
+Requirement already satisfied: pandas>=0.25 in /usr/local/lib/python3.10/dist-packages (from statsmodels) (1.5.3)
+Requirement already satisfied: patsy>=0.5.2 in /usr/local/lib/python3.10/dist-packages (from statsmodels) (0.5.3)
+Requirement already satisfied: packaging>=21.3 in /usr/local/lib/python3.10/dist-packages (from statsmodels) (23.1)
+Requirement already satisfied: scipy>=1.3 in /usr/local/lib/python3.10/dist-packages (from statsmodels) (1.10.1)
+Requirement already satisfied: numpy>=1.17 in /usr/local/lib/python3.10/dist-packages (from statsmodels) (1.22.4)
+Requirement already satisfied: python-dateutil>=2.8.1 in /usr/local/lib/python3.10/dist-packages (from pandas>=0.25->statsmodels) (2.8.2)
+Requirement already satisfied: pytz>=2020.1 in /usr/local/lib/python3.10/dist-packages (from pandas>=0.25->statsmodels) (2022.7.1)
+Requirement already satisfied: six in /usr/local/lib/python3.10/dist-packages (from patsy>=0.5.2->statsmodels) (1.16.0)
+Collecting pmdarima
+  Downloading pmdarima-2.0.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl (1.8 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8/1.8 MB 25.4 MB/s eta 0:00:00
+Requirement already satisfied: joblib>=0.11 in /usr/local/lib/python3.10/dist-packages (from pmdarima) (1.2.0)
+Requirement already satisfied: Cython!=0.29.18,!=0.29.31,>=0.29 in /usr/local/lib/python3.10/dist-packages (from pmdarima) (0.29.35)
+Requirement already satisfied: numpy>=1.21.2 in /usr/local/lib/python3.10/dist-packages (from pmdarima) (1.22.4)
+Requirement already satisfied: pandas>=0.19 in /usr/local/lib/python3.10/dist-packages (from pmdarima) (1.5.3)
+Requirement already satisfied: scikit-learn>=0.22 in /usr/local/lib/python3.10/dist-packages (from pmdarima) (1.2.2)
+Requirement already satisfied: scipy>=1.3.2 in /usr/local/lib/python3.10/dist-packages (from pmdarima) (1.10.1)
+Requirement already satisfied: statsmodels>=0.13.2 in /usr/local/lib/python3.10/dist-packages (from pmdarima) (0.13.5)
+Requirement already satisfied: urllib3 in /usr/local/lib/python3.10/dist-packages (from pmdarima) (1.26.16)
+Requirement already satisfied: setuptools!=50.0.0,>=38.6.0 in /usr/local/lib/python3.10/dist-packages (from pmdarima) (67.7.2)
+Requirement already satisfied: python-dateutil>=2.8.1 in /usr/local/lib/python3.10/dist-packages (from pandas>=0.19->pmdarima) (2.8.2)
+Requirement already satisfied: pytz>=2020.1 in /usr/local/lib/python3.10/dist-packages (from pandas>=0.19->pmdarima) (2022.7.1)
+Requirement already satisfied: threadpoolctl>=2.0.0 in /usr/local/lib/python3.10/dist-packages (from scikit-learn>=0.22->pmdarima) (3.1.0)
+Requirement already satisfied: patsy>=0.5.2 in /usr/local/lib/python3.10/dist-packages (from statsmodels>=0.13.2->pmdarima) (0.5.3)
+Requirement already satisfied: packaging>=21.3 in /usr/local/lib/python3.10/dist-packages (from statsmodels>=0.13.2->pmdarima) (23.1)
+Requirement already satisfied: six in /usr/local/lib/python3.10/dist-packages (from patsy>=0.5.2->statsmodels>=0.13.2->pmdarima) (1.16.0)
+Installing collected packages: pmdarima
+Successfully installed pmdarima-2.0.3
+Collecting deap
+  Downloading deap-1.3.3-cp310-cp310-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl (139 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 139.9/139.9 kB 4.5 MB/s eta 0:00:00
+Requirement already satisfied: numpy in /usr/local/lib/python3.10/dist-packages (from deap) (1.22.4)
+Installing collected packages: deap
+Successfully installed deap-1.3.3
+Imports.
+
+
+from datetime import datetime
+from statsmodels.tsa.seasonal import seasonal_decompose
+from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.graphics.tsaplots import plot_acf
+from statsmodels.graphics.tsaplots import plot_pacf
+from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_absolute_error
+from deap import creator, base, tools, algorithms
+from math import sqrt
+import networkx as nx
+import numpy as np
+import pandas as pd
+import json
+import math
+import random
+import names
+import requests
+import time
+import socket
+import seaborn as sns
+import mysql.connector
+import matplotlib.pyplot as plt
+from google.colab import drive
+drive.mount('/content/gdrive')
+     
+Drive already mounted at /content/gdrive; to attempt to forcibly remount, call drive.mount("/content/gdrive", force_remount=True).
+Configuration file for secure storage of sensitive information.
+
+
+# Read and retrieve the data from the configuration file.
+with open('/content/gdrive/My Drive/config_data.json', 'r') as f:
+    config_data = json.load(f)
+
+db_host = config_data['DB_HOST']
+db_port = config_data['DB_PORT']
+db_user = config_data['DB_USER']
+db_password = config_data['DB_PASSWORD']
+db_database = config_data['DB_DATABASE']
+lastfm_api_key = config_data['LASTFM_API_KEY']
+discogs_api_token = config_data['DISCOGS_API_TOKEN']
+     
+Connectivity test from google colab to mydb in docker desktop mariadb container
+
+
+try:
+    # Create a socket object.
+    sock = socket.create_connection((db_host, db_port), timeout=5)
+
+    # If the connection succeeds, print a success message.
+    print(f"Successfully connected to {db_host}:{db_port}")
+
+    # Close the socket connection.
+    sock.close()
+
+except Exception as e:
+    # If there is an error, print the error message.
+    print(f"Error: {e}")
+     
+Successfully connected to 46.246.177.50:3306
+Queries to create the required relational database schema.
+
+
+mydb = mysql.connector.connect(
+    host=db_host,
+    port=db_port,
+    user=db_user,
+    password=db_password,
+    database=db_database
+)
+cursor = mydb.cursor()
+
+cursor.execute("CREATE TABLE Users (user_id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255));")
+cursor.execute("CREATE TABLE Bands (band_id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), genre VARCHAR(255), playcount INT(11), listeners INT(11), entry_timestamp TIMESTAMP);")
+cursor.execute("CREATE TABLE Records (record_id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), band_id INT(11), price FLOAT, FOREIGN KEY (band_id) REFERENCES Bands(band_id));")
+cursor.execute("CREATE TABLE User_Bands (user_id INT(11) NOT NULL, band_id INT(11) NOT NULL, PRIMARY KEY (user_id, band_id), FOREIGN KEY (user_id) REFERENCES Users(user_id), FOREIGN KEY (band_id) REFERENCES Bands(band_id));")
+cursor.execute("CREATE TABLE User_Records (user_id INT(11) NOT NULL, record_id INT(11) NOT NULL, PRIMARY KEY (user_id, record_id), FOREIGN KEY (user_id) REFERENCES Users(user_id), FOREIGN KEY (record_id) REFERENCES Records(record_id));")
+
+mydb.commit()
+cursor.close()
+mydb.close()
+     
+---------------------------------------------------------------------------
+NameError                                 Traceback (most recent call last)
+<ipython-input-1-aec936fb3061> in <cell line: 1>()
+----> 1 mydb = mysql.connector.connect(
+      2     host=db_host,
+      3     port=db_port,
+      4     user=db_user,
+      5     password=db_password,
+
+NameError: name 'mysql' is not defined
+
+The database created is a relational database. Such a database is a good choice because of its structured logic and ability to handle complex relationships between data entities.
+
+It offers data integrity as constraints are enforced through primary and foreign keys, ensuring data accuracy and consistency.
+
+Additionally, it facilitates managing relationships between tables and retrieving related data.
+
+It is also important that relational databases are extremely widespread, so many tools and libraries are easily provided.
+
+Suppose you have 20 users forming a community as given by a Barabasi Albert model [3].
+
+community_graph= nx.barabasi_albert_graph(20,3)
+nx.draw(community_graph, with_labels=True)
+
+     
+
+(a.) Design the data model that will represent the users of the community, the bands they like and the records they own. Implement the data model scheme in a relational (SQL like) database (DB) and build functions that insert random data of your choice for users. [Lecture 3 MySQL]
+
+mydb = mysql.connector.connect(
+    host=db_host,
+    port=db_port,
+    user=db_user,
+    password=db_password,
+    database=db_database
+)
+
+cursor = mydb.cursor()
+
+# Define a function to insert a user.
+def insert_user(name):
+    add_user = ("INSERT INTO Users (name) VALUES (%s)")
+    cursor.execute(add_user, (name,))
+
+# Check the number of users in the table and then, if the user count is already 20, print a message and skip the insertion.
+cursor.execute("SELECT COUNT(*) FROM Users")
+user_count = cursor.fetchone()[0]
+
+if user_count >= 20:
+    print("User table is already full.")
+else:
+    for _ in range(20):
+        insert_user(names.get_full_name())
+    mydb.commit()
+
+mydb.close()
+     
+User table is already full.
+
+(b.) For each user of the community, create functions that retrieve data from opendata in relation to the bands he listens to and the records he is interested in and to fill the corresponding tables in the NW. [Rest calls in [1] [2] and MySQL Lecture 3]
+
+Note: For the selection of attributes, consider the following questions. It is natural as you become familiar with the task to change the shape of the NW and the attributes).
+
+[1] https://www.last.fm/api
+
+[2] https://www.discogs.com/developers
+
+
+mydb = mysql.connector.connect(
+    host=db_host,
+    port=db_port,
+    user=db_user,
+    password=db_password,
+    database=db_database
+)
+
+cursor = mydb.cursor()
+
+# Get the top artists from the Last.fm API.
+response = requests.get('http://ws.audioscrobbler.com/2.0/?method=chart.gettopartists&api_key=' + lastfm_api_key + '&format=json')
+top_artists = response.json()['artists']['artist']
+# Wait for 1 second to avoid hitting the API rate limit.
+time.sleep(1)
+
+# Get the user IDs from the database.
+cursor.execute("SELECT user_id FROM Users")
+user_ids = [row[0] for row in cursor.fetchall()]
+
+# Define the order of record quality preference.
+price_preference_order = ['Very Good Plus (VG+)', 'Near Mint (NM or M-)', 'Mint (M)', 'Very Good (VG)', 'Good Plus (G+)', 'Good (G)', 'Fair (F)', 'Poor (P)']
+
+for user_id in user_ids:
+    # Check if the user already has at least 2 artists linked to them.
+    cursor.execute("SELECT COUNT(*) FROM User_Bands WHERE user_id = %s", (user_id,))
+    count = cursor.fetchone()[0]
+    if count >= 2:
+        print("User " + str(user_id) + " already has at least 2 artists linked to them. Skipping user...")
+        continue
+    # Randomly assign 2 to 5 artists to the user.
+    liked_artists = random.sample(top_artists, random.randint(2, 5))
+    for artist in liked_artists:
+        # Check if the artist is already in the Bands table.
+        cursor.execute("SELECT band_id FROM Bands WHERE name = %s", (artist['name'],))
+        result = cursor.fetchone()
+        if result is None:
+            # Get genre information for the artist, insert the artist into the Bands table and then get the ID of the newly inserted band.
+            response = requests.get('http://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist=' + artist['name'] + '&api_key=' + lastfm_api_key + '&format=json')
+            artist_info = response.json()
+            genre = artist_info['artist']['tags']['tag'][0]['name'] if artist_info['artist']['tags']['tag'] else None
+            cursor.execute("INSERT INTO Bands (name, genre) VALUES (%s, %s)", (artist['name'], genre))
+            mydb.commit()
+            band_id = cursor.lastrowid
+            time.sleep(1)
+        else:
+            print("Artist or band " + artist['name'] + " with id " + str(band_id) + " is already present in the Bands table. Skipping artist/band...")
+            band_id = result[0]
+
+        # Link the user and the band in the User_Bands table if not already linked.
+        cursor.execute("SELECT * FROM User_Bands WHERE user_id = %s AND band_id = %s", (user_id, band_id))
+        if cursor.fetchone() is None:
+            cursor.execute("INSERT INTO User_Bands (user_id, band_id) VALUES (%s, %s)", (user_id, band_id))
+            mydb.commit()
+        else:
+           print("User " + str(user_id) + " and artist/band " + artist['name'] + " with id " + str(band_id) + " are already linked. Skipping link creation...")
+
+
+        # Use the Discogs API to get the albums of the artist and then create a list to use later in album assignment.
+        response = requests.get('https://api.discogs.com/database/search?type=release&artist=' + artist['name'] + '&token=' + discogs_api_token)
+        albums = response.json()['results']
+        time.sleep(1)
+        owned_albums = random.sample(albums, random.randint(1, min(5, len(albums))))
+
+        for album in owned_albums:
+            # Check if the user already has at least one record linked to them that belongs to the current artist.
+            cursor.execute("SELECT COUNT(*) FROM User_Records JOIN Records ON User_Records.record_id = Records.record_id WHERE User_Records.user_id = %s AND Records.band_id = %s", (user_id, band_id))
+            count = cursor.fetchone()[0]
+            if count > 0:
+                print("User " + str(user_id) + " already has at least one record linked to them belonging to current artist/band " + str(band_id) + ". Skipping link creation...")
+                continue
+
+            # Check if the album is already in the Records table.
+            cursor.execute("SELECT record_id FROM Records WHERE name = %s AND band_id = %s", (album['title'], band_id))
+            result = cursor.fetchone()
+            if result is None:
+                # Get the price suggestions for the album from the Discogs API and then iterate over the conditions in the order of preference.
+                response = requests.get('https://api.discogs.com/marketplace/price_suggestions/' + str(album['id']), headers={'Authorization': 'Discogs token=' + discogs_api_token})
+                price_suggestions = response.json()
+                price = None
+
+                for condition in price_preference_order:
+                    # If the condition is in the price suggestions, get the price and break the loop.
+                    if condition in price_suggestions:
+                        price = price_suggestions[condition]['value']
+                        break
+
+                # Insert the album into the Records table and get the ID of the newly inserted record.
+                cursor.execute("INSERT INTO Records (name, band_id, price) VALUES (%s, %s, %s)", (album['title'], band_id, price))
+                mydb.commit()
+                record_id = cursor.lastrowid
+                time.sleep(1)
+            else:
+                print(" Record " + album['title'] + " already present in records table. Skipping insertion...")
+                record_id = result[0]
+
+            # Link the user and the album in the User_Records table if not already linked.
+            cursor.execute("SELECT * FROM User_Records WHERE user_id = %s AND record_id = %s", (user_id, record_id))
+            if cursor.fetchone() is None:
+                cursor.execute("INSERT INTO User_Records (user_id, record_id) VALUES (%s, %s)", (user_id, record_id))
+                mydb.commit()
+            else:
+              print("User " + str(user_id) + " and record " + str(record_id) + " already linked. Skipping link creation...")
+     
+User 1 already has at least 2 artists linked to them. Skipping user...
+User 2 already has at least 2 artists linked to them. Skipping user...
+User 3 already has at least 2 artists linked to them. Skipping user...
+User 4 already has at least 2 artists linked to them. Skipping user...
+User 5 already has at least 2 artists linked to them. Skipping user...
+User 6 already has at least 2 artists linked to them. Skipping user...
+User 7 already has at least 2 artists linked to them. Skipping user...
+User 8 already has at least 2 artists linked to them. Skipping user...
+User 9 already has at least 2 artists linked to them. Skipping user...
+User 10 already has at least 2 artists linked to them. Skipping user...
+User 11 already has at least 2 artists linked to them. Skipping user...
+User 12 already has at least 2 artists linked to them. Skipping user...
+User 13 already has at least 2 artists linked to them. Skipping user...
+User 14 already has at least 2 artists linked to them. Skipping user...
+User 15 already has at least 2 artists linked to them. Skipping user...
+User 16 already has at least 2 artists linked to them. Skipping user...
+User 17 already has at least 2 artists linked to them. Skipping user...
+User 18 already has at least 2 artists linked to them. Skipping user...
+User 19 already has at least 2 artists linked to them. Skipping user...
+User 20 already has at least 2 artists linked to them. Skipping user...
+
+The above data-filling code was developed to store the necessary information related to users, bands/artists, records/albums and their relationships.
+
+Specifically, top artists are retrieved from the Last.fm API where this data will be used to randomly assign artists to users.
+
+By executing various SQL queries, we obtain and store information about bands/artists and associate them with users. Through genetic algorithm selection, we randomly select a subset of artists for each user, checking for already existing links, as due to limited computing resources, some specific limits have been introduced. Of course, this also achieves a random diversity in user "tastes", offering realism.
+
+The albums and price suggestions for each selected artist are then retrieved through the Discogs API.
+
+Throughout the program design, the code was developed with a systematic approach to ensure the integrity of data relationships and avoid duplication or inconsistency.
+
+In conclusion, the code has attempted to demonstrate a thoughtful approach to populating a database with realistic data by integrating external data APIs, using genetic algorithms for selection, and establishing appropriate relationships between entities. In addition, attention was paid to ensuring data integrity by integrating external data sources and creating meaningful relationships within the database.
+
+(c.) Implement a function that checks for and deals with [missing](https://towardsdatascience.com/data-cleaning-with-python-and-pandas-detecting-missing-values-3e9c6ebcf78b) [4], duplicate [5] or outlier [6] values in any of the NW attributes.
+
+[4] https://towardsdatascience.com/data-cleaning-with-python-and-pandas-detecting-missing-values-3e9c6ebcf78b
+
+[5] https://stackoverflow.com/questions/14657241/how-do-i-get-a-list-of-all-the-duplicate-items-using-pandas-in-python
+
+[6] https://towardsdatascience.com/5-ways-to-detect-outliers-that-every-data-scientist-should-know-python-code-70a54335a623
+
+mydb = mysql.connector.connect(
+    host=db_host,
+    port=db_port,
+    user=db_user,
+    password=db_password,
+    database=db_database
+)
+
+cursor = mydb.cursor()
+
+# Calculate the average price of all records and get all records with NULL price.
+cursor.execute("SELECT AVG(price) FROM Records WHERE price IS NOT NULL")
+average_price = cursor.fetchone()[0]
+cursor.execute("SELECT record_id FROM Records WHERE price IS NULL")
+records = cursor.fetchall()
+
+null_prices_updated = 0
+
+for record in records:
+    record_id = record[0]
+
+    # Generate a random percentage between -25% and +25%, calculate the new price and then update the price in the Records table.
+    percentage = random.uniform(-0.25, 0.25)
+    new_price = average_price * (1 + percentage)
+    cursor.execute("UPDATE Records SET price = %s WHERE record_id = %s", (new_price, record_id))
+    mydb.commit()
+    null_prices_updated += 1
+
+print("Number of null prices updated:", null_prices_updated)
+     
+Number of null prices updated: 0
+
+The data entry code in question (b) was developed with the aim of avoiding the creation of duplicates and missing values. For this reason, the only attribute of the database that needed control and treatment (data cleaning) was that of the value of the records in the table Records.
+
+The technique used to replace missing values was to average the value of all records and then add a random element for each value from -25% to +25%.
+
+The purpose was for the technique to be relatively simple, as it was not possible to identify an alternative way to obtain true values for the records in question.
+
+However, there are glimpses of possible effects that this movement may bring, and opportunities to observe the effects on the overall price distribution, allowing us to understand the ways in which these factors affect it.
+
+For example, this random data can be used as a tool to simulate various scenarios, such as running multiple iterations with different random variations and observing the range of possible outcomes. This process of exploring simulations allows us to analyze the impact of random data on decision making.
+
+In conclusion, this decision is a conscious one and there is full awareness of the potential implications, limitations and challenges associated with this approach. However, we will proceed with critical analysis and diligence in this decision-making process.
+
+(d.) Draw some statistical conclusions about the data features [7] [8]
+
+[7] https://pandas.pydata.org/docs/getting_started/intro_tutorials/06_calculate_statistics.html
+
+[8] https://sparkbyexamples.com/pandas/calculate-summary-statistics-in-pandas/
+
+
+mydb = mysql.connector.connect(
+    host=db_host,
+    port=db_port,
+    user=db_user,
+    password=db_password,
+    database=db_database
+)
+
+cursor = mydb.cursor()
+
+# Execute the SQL query
+cursor.execute("""
+    SELECT Bands.genre, COUNT(DISTINCT User_Bands.user_id) as user_count
+    FROM User_Bands
+    JOIN Bands ON User_Bands.band_id = Bands.band_id
+    GROUP BY Bands.genre
+    ORDER BY user_count DESC
+""")
+
+rows1 = cursor.fetchall()
+for row in rows1:
+    print("Genre: ", row[0], ", Number of Users: ", row[1])
+     
+Genre:  pop , Number of Users:  15
+Genre:  Hip-Hop , Number of Users:  10
+Genre:  rnb , Number of Users:  7
+Genre:  classic rock , Number of Users:  5
+Genre:  rap , Number of Users:  5
+Genre:  country , Number of Users:  4
+Genre:  female vocalists , Number of Users:  3
+Genre:  indie , Number of Users:  3
+Genre:  Lo-Fi , Number of Users:  3
+Genre:  rock , Number of Users:  3
+Genre:  trap , Number of Users:  3
+Genre:  alternative , Number of Users:  2
+Genre:  indie rock , Number of Users:  2
+Genre:  jazz , Number of Users:  1
+Genre:  seen live , Number of Users:  1
+Genre:  soul , Number of Users:  1
+
+Above we have a list of music category preferences sorted from most popular to least loved. We can see that we have some obvious popular and preferred genres of music among our 20 users.
+
+The popularity of "pop" music, with 15 out of 20 users preferring it, is clear. Of course, then they follow "hip-hop" with 10 users and "rnb" with 7 users each. From these three values alone, we can easily conclude that users happen to prefer "mainstream" music.
+
+However, we notice that there is a range of preferences with 16 different types of music. This shows that our users have a variety in what they listen to.
+
+We are then shown that while some genres are very popular, quite a few are liked by only a few users, such as "jazz" and "soul", where for example they are selected by only one user each. This indicates a so-called "Long-tail distribution", which as a phenomenon, is common in many dimensions regarding digital media.
+
+In the next phase of conducting statistical inferences we aim to identify the overlap of items between users. That is, how many users who like one type of music also like another, creating an overlap, and in this way see how often users' preferences are shared, for example.
+
+mydb = mysql.connector.connect(
+    host=db_host,
+    port=db_port,
+    user=db_user,
+    password=db_password,
+    database=db_database
+)
+
+cursor = mydb.cursor()
+
+# Fetch the data from the database, convert rows2 to a dataframe,  drop duplicates from the dataframe and create a matrix where each cell represents the number of users who like both genres.
+cursor.execute("""
+    SELECT Users.user_id, Bands.genre
+    FROM Users
+    JOIN User_Bands ON Users.user_id = User_Bands.user_id
+    JOIN Bands ON User_Bands.band_id = Bands.band_id
+""")
+rows2 = cursor.fetchall()
+
+df = pd.DataFrame(rows2, columns=['user_id', 'genre'])
+df = df.drop_duplicates()
+
+user_genre_matrix = df.pivot_table(index='user_id', columns='genre', aggfunc='size', fill_value=0)
+co_occurrence_matrix = user_genre_matrix.T.dot(user_genre_matrix)
+
+print(co_occurrence_matrix)
+     
+genre             Hip-Hop  Lo-Fi  alternative  classic rock  country  \
+genre                                                                  
+Hip-Hop                10      2            0             1        3   
+Lo-Fi                   2      3            0             0        0   
+alternative             0      0            2             2        0   
+classic rock            1      0            2             5        0   
+country                 3      0            0             0        4   
+female vocalists        3      0            0             0        1   
+indie                   1      1            0             0        0   
+indie rock              1      2            0             0        0   
+jazz                    1      1            0             0        0   
+pop                     7      1            1             3        4   
+rap                     3      1            1             1        3   
+rnb                     4      1            0             0        2   
+rock                    2      1            0             0        1   
+seen live               0      0            1             1        0   
+soul                    0      0            0             0        0   
+trap                    1      0            0             0        1   
+
+genre             female vocalists  indie  indie rock  jazz  pop  rap  rnb  \
+genre                                                                        
+Hip-Hop                          3      1           1     1    7    3    4   
+Lo-Fi                            0      1           2     1    1    1    1   
+alternative                      0      0           0     0    1    1    0   
+classic rock                     0      0           0     0    3    1    0   
+country                          1      0           0     0    4    3    2   
+female vocalists                 3      0           0     0    3    0    2   
+indie                            0      3           0     0    3    0    0   
+indie rock                       0      0           2     1    0    1    1   
+jazz                             0      0           1     1    0    1    0   
+pop                              3      3           0     0   15    3    6   
+rap                              0      0           1     1    3    5    2   
+rnb                              2      0           1     0    6    2    7   
+rock                             1      0           1     0    1    0    1   
+seen live                        0      0           0     0    0    1    0   
+soul                             0      0           0     0    1    0    1   
+trap                             1      0           0     0    3    1    2   
+
+genre             rock  seen live  soul  trap  
+genre                                          
+Hip-Hop              2          0     0     1  
+Lo-Fi                1          0     0     0  
+alternative          0          1     0     0  
+classic rock         0          1     0     0  
+country              1          0     0     1  
+female vocalists     1          0     0     1  
+indie                0          0     0     0  
+indie rock           1          0     0     0  
+jazz                 0          0     0     0  
+pop                  1          0     1     3  
+rap                  0          1     0     1  
+rnb                  1          0     1     2  
+rock                 3          0     0     0  
+seen live            0          1     0     0  
+soul                 0          0     1     0  
+trap                 0          0     0     3  
+
+Creation of the new columns to store new data about the playcount, listeners and the timestamp at the time of entering the data of each artist/band in the table Bands.
+
+mydb = mysql.connector.connect(
+    host=db_host,
+    port=db_port,
+    user=db_user,
+    password=db_password,
+    database=db_database
+)
+
+cursor = mydb.cursor()
+
+#Adjust the Records table to accept new data about playcount, listeners of each record and also provide a timestamp.
+
+cursor.execute("ALTER TABLE Bands ADD COLUMN playcount INT")
+cursor.execute("ALTER TABLE Bands ADD COLUMN listeners INT")
+cursor.execute("ALTER TABLE Bands ADD COLUMN entry_timestamp TIMESTAMP")
+mydb.commit()
+     
+Then we will fetch this new data for each band and store it in the Bands table.
+
+mydb = mysql.connector.connect(
+    host=db_host,
+    port=db_port,
+    user=db_user,
+    password=db_password,
+    database=db_database
+)
+
+cursor = mydb.cursor()
+
+cursor.execute("SELECT band_id, name FROM Bands")
+bands = cursor.fetchall()
+
+for band in bands:
+    response = requests.get('http://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist=' + band[1] + '&api_key=' + lastfm_api_key + '&format=json')
+    artist_info = response.json()
+    playcount = artist_info['artist']['stats']['playcount']
+    listeners = artist_info['artist']['stats']['listeners']
+    time.sleep(1)
+
+    cursor.execute("UPDATE Bands SET playcount = %s, listeners = %s, entry_timestamp = NOW() WHERE band_id = %s", (playcount, listeners, band[0]))
+    mydb.commit()
+     
+Finally we will calculate the total number of playcounts and listeners per music category. In addition we will calculate the playcount / listeners ratio once it needs statistical significance.
+
+mydb = mysql.connector.connect(
+    host=db_host,
+    port=db_port,
+    user=db_user,
+    password=db_password,
+    database=db_database
+)
+
+cursor = mydb.cursor()
+
+cursor.execute("SELECT genre FROM Bands GROUP BY genre")
+genres = cursor.fetchall()
+
+for genre in genres:
+    cursor.execute("SELECT SUM(playcount), SUM(listeners) FROM Bands WHERE genre = %s", (genre[0],))
+    sums = cursor.fetchone()
+    if sums[1] != 0:
+        ratio = sums[0] / sums[1]
+    else:
+        ratio = 0
+    print("Genre: " + genre[0] + ", Total Playcount: " + str(sums[0]) + ", Total Listeners: " + str(sums[1]) + ", Playcount-to-Listeners Ratio: " + str(ratio))
+     
+Genre: alternative, Total Playcount: 297557950, Total Listeners: 4988801, Playcount-to-Listeners Ratio: 59.64518328151393491141458639
+Genre: classic rock, Total Playcount: 838451567, Total Listeners: 8188696, Playcount-to-Listeners Ratio: 102.3913413075781540797216065
+Genre: country, Total Playcount: 1434258940, Total Listeners: 4045068, Playcount-to-Listeners Ratio: 354.5697970961180380651202897
+Genre: female vocalists, Total Playcount: 674394267, Total Listeners: 3474646, Playcount-to-Listeners Ratio: 194.0900647145061683981619998
+Genre: Hip-Hop, Total Playcount: 2046327560, Total Listeners: 17422443, Playcount-to-Listeners Ratio: 117.4535373713089490377440179
+Genre: indie, Total Playcount: 268698295, Total Listeners: 3354749, Playcount-to-Listeners Ratio: 80.09490277812140341945105282
+Genre: indie rock, Total Playcount: 547179148, Total Listeners: 5097812, Playcount-to-Listeners Ratio: 107.3360783018283137942317214
+Genre: jazz, Total Playcount: 108375898, Total Listeners: 1549393, Playcount-to-Listeners Ratio: 69.94732646913985025103379194
+Genre: Lo-Fi, Total Playcount: 318323787, Total Listeners: 3480331, Playcount-to-Listeners Ratio: 91.46365302610585027688458368
+Genre: pop, Total Playcount: 2334928242, Total Listeners: 32311645, Playcount-to-Listeners Ratio: 72.26274743981620248675051982
+Genre: rap, Total Playcount: 433463443, Total Listeners: 7058437, Playcount-to-Listeners Ratio: 61.41068383836251566742042183
+Genre: rnb, Total Playcount: 1363815143, Total Listeners: 13850242, Playcount-to-Listeners Ratio: 98.46868690092201999069763546
+Genre: rock, Total Playcount: 827675953, Total Listeners: 10707209, Playcount-to-Listeners Ratio: 77.30081228450850263593435040
+Genre: seen live, Total Playcount: 220465143, Total Listeners: 1433721, Playcount-to-Listeners Ratio: 153.7713006923941268907967450
+Genre: soul, Total Playcount: 215554950, Total Listeners: 1944306, Playcount-to-Listeners Ratio: 110.8647249969912143458899988
+Genre: trap, Total Playcount: 181858169, Total Listeners: 1481368, Playcount-to-Listeners Ratio: 122.7636677719513314719907545
+With the above results we can make some statistical conclusions about the aforementioned data features regarding the playcount and listeners per music genre.
+
+Since the Bands table has artists/bands entered with the chart.getTopArtists method that returns last.fm's top artists charts at the given time the code is run, we are given the ability to see how many unique users have preferred each artist/band* * at least once, but also over time through the playcount** which shows us the total number of times a piece of music by an artist/band has been played.
+
+First, we will notice that the "Pop", "Hip-Hop" and "Rnb" categories have both a high playcount and a high number of listeners. This suggests to us that among last.fm users these three categories are extremely popular.
+
+On the contrary, the genres "Trap", "Seen Live", "Jazz" and "Soul" have comparatively a much smaller number of playcounts and listeners. This probably indicates that specific genres tend to be more "unknown" or less recommended by last.fm users.
+
+Then, an additional observation found, is the fact that some genres such as "Classic Rock" and "Indie Rock" have a high playcount but a relatively low listener count compared to "Pop" or "Hip-Hop". This suggests a tendency for users who prefer the two aforementioned genres to continue enjoying these artists over time.
+
+Taking into account the results of the ratios** playcount to listeners**, we have the possibility to draw additional conclusions.
+
+Firstly, we observe a bipolar phenomenon of music genres with high and low engagement. More specifically, we have high engagement genres, such as "Country", "Female Vocalist" and "Seen Live" where they have a high ratio of playcount to listeners. This leads us to the conclusion that these listeners tend to play the music of this genre often, which probably indicates a loyal "fanbase".
+
+In contrast are the genres "Alternative", "Rap" and "Rock" with a low ratio of playcount to listeners or in other words, low engagement genres. This fact may indicate that although there is a significant number of unique users who have played the artist/band's music material, they probably do not tend to convert into frequent listeners.
+
+It would be a mistake to overlook the phenomenon of the "Pop" genre. It is observed that although it has the largest number of playcounts and listeners, it does not have the largest aforementioned ratio. In short, in this special case, we get the idea that popularity does not necessarily coincide with retention of dedicated listeners in terms of repeat listens.
+
+A conclusion that could be drawn is that genres of music with a low ratio of playcounts to listeners, might achieve an increase in their total playbacks, by implementing various types of strategy such as releasing new music more frequently, advertising campaigns and greater dialogicity with fans them on social media.
+
+In addition, something relatively obvious is observed. There is increased data variability. More specifically, the ratio of playcounts to listeners varies rapidly by genre of music.
+
+As a slight "disclaimer", the above conclusions, of course, remain entirely based on the data we were able to extract from Last.fm and the specific artists/bands represented in the Bands table. Actual levels of engagement and preference will likely vary depending on the source of the data and different demographics of listeners.
+(e.) Graphically represent some attributes of your data and explain the conclusions you draw [data visualization lecture].
+
+Representation of popularity of music categories among our users, using a bar plot.
+
+# Split the rows into two lists: one for the genres and one for the user counts.
+genres = [row[0] for row in rows1]
+user_counts = [row[1] for row in rows1]
+
+# Create a bar plot.
+plt.barh(genres, user_counts)
+plt.xlabel('Number of Users')
+plt.ylabel('Genre')
+plt.title('Popularity of Genres Among Users')
+plt.gca().invert_yaxis()
+plt.show()
+     
+
+Representation of overlap of music preferences of users by pairs, using a heatmap.
+
+# Convert the co_occurrence_matrix to a floating-point type, set the diagonal to NaN and then create a heatmap.
+co_occurrence_matrix = co_occurrence_matrix.astype(float)
+np.fill_diagonal(co_occurrence_matrix.values, np.nan)
+sns.heatmap(co_occurrence_matrix, cmap='YlGnBu')
+plt.show()
+     
+In addition, a table with the above heatmap data.
+
+# Set the diagonal values of co_occurrence_matrix to 0 and reset the index of the co-occurrence matrix to convert the index into columns.
+np.fill_diagonal(co_occurrence_matrix.values, 0)
+co_occurrence_matrix_reset = co_occurrence_matrix.reset_index()
+
+# Melt the DataFrame to create a long format of DataFrame, which consists of pairs of genres and create a new column 'genre_set' which is a set of the two genres.
+co_occurrence_pairs = co_occurrence_matrix_reset.melt(id_vars='genre', var_name='genre_2', value_name='overlap')
+co_occurrence_pairs['genre_set'] = co_occurrence_pairs.apply(lambda x: frozenset([x['genre'], x['genre_2']]), axis=1)
+
+# Drop duplicates based on 'genre_set' and sort the pairs by overlap in descending order.
+co_occurrence_pairs = co_occurrence_pairs.drop_duplicates(subset='genre_set')
+co_occurrence_pairs = co_occurrence_pairs.sort_values(by='overlap', ascending=False)
+
+print(co_occurrence_pairs.head())
+     
+    genre  genre_2  overlap       genre_set
+9     pop  Hip-Hop      7.0  (pop, Hip-Hop)
+155   rnb      pop      6.0      (pop, rnb)
+73    pop  country      4.0  (pop, country)
+11    rnb  Hip-Hop      4.0  (rnb, Hip-Hop)
+159  trap      pop      3.0     (pop, trap)
+
+Below we also have two visualizations with bars and a scatterplot so that the ratio of playcounts / listeners for each genre of music becomes more noticeable.
+
+genres = ['alternative', 'classic rock', 'country', 'female vocalists', 'Hip-Hop', 'indie', 'indie rock', 'jazz', 'Lo-Fi', 'pop', 'rap', 'rnb', 'rock', 'seen live', 'soul', 'trap']
+playcounts = [297190682, 837676653, 1427109689, 672057493, 2039376949, 268148179, 546288555, 107765637, 317219163, 2330477658, 432235000, 1358969435, 826654998, 219802950, 214618396, 175784328]
+listeners = [4985281, 8181934, 4039073, 3468981, 17385760, 3350684, 5092829, 1543259, 3471690, 32269633, 7050525, 13822596, 10696833, 1430153, 1939339, 1449437]
+
+plt.figure(figsize=(10,6))
+plt.bar(genres, playcounts, color='b', alpha=0.5, label='Playcounts')
+plt.bar(genres, listeners, color='r', alpha=0.5, label='Listeners')
+plt.xlabel('Genres')
+plt.ylabel('Counts')
+plt.title('Playcounts and Listeners by Genre')
+plt.xticks(rotation=90)
+plt.legend()
+plt.show()
+     
+
+
+plt.figure(figsize=(15,10))
+plt.scatter(playcounts, listeners)
+for i, txt in enumerate(genres):
+    plt.annotate(txt, (playcounts[i], listeners[i]), textcoords="offset points", xytext=(10,-10), ha='center')
+plt.xlabel('Playcounts')
+plt.ylabel('Listeners')
+plt.title('Playcounts vs Listeners by Genre')
+plt.show()
+     
+(f.) Let the synthetic time series dataset in the next cell have the lowest price that a disc is sold for each day, represent the time series and decompose it into trend, seasonality and residuals [lecture and lab time series].
+
+
+date_rng = pd.date_range(start='1/1/2018', end='12/31/2022', freq='D')
+val=40+15*np.tile(np.sin(np.linspace(-np.pi, np.pi, 365)),5)
+val=np.append(val,val[1824])+5*np.random.rand(1826)
+series = pd.DataFrame({
+    'values': val
+}, index=pd.DatetimeIndex(date_rng))
+series.plot()
+series.to_csv('gdrive/My Drive/File_series.csv', index=True, header=True)
+     
+
+
+# Decompose the time series
+result = seasonal_decompose(series['values'], model='additive')
+
+fig, (ax1,ax2,ax3,ax4) = plt.subplots(4,1, figsize=(10,10))
+result.observed.plot(ax=ax1)
+ax1.set_ylabel('Observed')
+result.trend.plot(ax=ax2)
+ax2.set_ylabel('Trend')
+result.seasonal.plot(ax=ax3)
+ax3.set_ylabel('Seasonal')
+result.resid.plot(ax=ax4)
+ax4.set_ylabel('Residual')
+
+plt.tight_layout()
+plt.show()
+     
+(g.) Split the time series data into 76% training and 34% testing, train an ARIMA model in the training split to predict the lowest price a record will sell for the next day, and evaluate its performance in the testing split [lecture and lab time series].
+
+
+X = series.values
+size = int(len(X) * 0.76)
+train, test = X[0:size], X[size:len(X)]
+history = [x for x in train]
+predictions = list()
+     
+
+plot_acf(series, lags=100)
+plt.show()
+     
+
+
+plot_pacf(series, lags=10)
+plt.show()
+     
+/usr/local/lib/python3.10/dist-packages/statsmodels/graphics/tsaplots.py:348: FutureWarning: The default method 'yw' can produce PACF values outside of the [-1,1] interval. After 0.13, the default will change tounadjusted Yule-Walker ('ywm'). You can use this method now by setting method='ywm'.
+  warnings.warn(
+
+
+for t in range(len(test)):
+	model = ARIMA(history, order=(5,1,0))
+	model_fit = model.fit()
+	output = model_fit.forecast()
+	yhat = output[0]
+	predictions.append(yhat)
+	obs = test[t]
+	history.append(obs)
+	print('predicted=%f, expected=%f' % (yhat, obs))
+     
+predicted=56.706064, expected=56.925007
+predicted=56.612853, expected=55.481712
+predicted=56.172547, expected=54.631481
+predicted=55.889747, expected=58.412856
+predicted=56.265967, expected=55.342348
+predicted=56.156161, expected=54.433038
+predicted=55.703370, expected=53.690694
+predicted=54.981409, expected=57.797300
+predicted=55.702189, expected=57.870631
+predicted=56.578949, expected=54.343688
+predicted=55.757662, expected=58.093095
+predicted=56.304978, expected=56.372504
+predicted=56.467427, expected=53.080795
+predicted=55.827097, expected=52.980794
+predicted=54.857090, expected=57.521327
+predicted=55.300433, expected=54.805878
+predicted=55.436950, expected=52.805885
+predicted=54.498728, expected=54.341616
+predicted=54.199561, expected=53.715150
+predicted=54.117502, expected=55.952558
+predicted=54.846536, expected=54.327471
+predicted=54.503132, expected=52.832647
+predicted=53.947008, expected=55.166102
+predicted=54.362856, expected=54.200884
+predicted=54.322896, expected=55.556131
+predicted=54.765887, expected=54.463094
+predicted=54.580821, expected=51.546073
+predicted=53.708674, expected=51.614489
+predicted=53.209084, expected=50.438168
+predicted=52.298158, expected=52.555695
+predicted=52.310773, expected=53.187152
+predicted=52.374747, expected=51.857259
+predicted=52.042620, expected=54.276706
+predicted=52.663279, expected=49.927432
+predicted=51.955534, expected=52.800030
+predicted=52.284163, expected=49.650804
+predicted=51.596524, expected=49.674105
+predicted=50.915268, expected=48.541369
+predicted=50.263038, expected=50.468638
+predicted=49.963049, expected=49.604484
+predicted=49.991998, expected=48.213870
+predicted=49.245000, expected=48.189731
+predicted=48.900477, expected=48.238408
+predicted=48.642159, expected=51.956522
+predicted=49.628211, expected=51.616336
+predicted=50.170076, expected=49.492137
+predicted=49.959359, expected=50.364284
+predicted=50.115994, expected=46.754542
+predicted=49.305404, expected=49.547913
+predicted=49.502341, expected=47.122319
+predicted=48.742652, expected=50.203661
+predicted=48.901226, expected=48.758222
+predicted=48.901522, expected=47.064200
+predicted=48.191195, expected=47.879914
+predicted=48.213942, expected=46.074237
+predicted=47.514717, expected=44.548076
+predicted=46.776007, expected=44.139676
+predicted=45.774405, expected=44.405530
+predicted=45.191632, expected=45.007003
+predicted=45.080720, expected=45.044636
+predicted=44.884299, expected=44.426690
+predicted=44.646565, expected=44.482214
+predicted=44.578191, expected=44.031261
+predicted=44.457967, expected=45.079565
+predicted=44.648781, expected=44.660213
+predicted=44.653536, expected=44.170661
+predicted=44.473188, expected=46.054202
+predicted=44.904030, expected=41.296768
+predicted=43.947951, expected=45.967459
+predicted=44.435642, expected=44.115557
+predicted=44.393654, expected=45.426783
+predicted=44.642352, expected=43.708368
+predicted=44.455514, expected=43.536977
+predicted=43.962342, expected=40.021186
+predicted=43.132847, expected=42.002959
+predicted=42.541799, expected=43.289180
+predicted=42.768656, expected=41.497451
+predicted=42.267663, expected=42.009687
+predicted=42.054960, expected=40.807182
+predicted=41.534731, expected=39.119405
+predicted=40.984319, expected=38.771334
+predicted=40.308906, expected=41.941145
+predicted=40.567907, expected=41.431870
+predicted=40.860070, expected=39.654816
+predicted=40.402734, expected=41.725458
+predicted=40.641227, expected=38.291798
+predicted=40.107020, expected=39.822016
+predicted=40.132425, expected=39.800581
+predicted=39.954047, expected=39.121791
+predicted=39.615799, expected=38.529140
+predicted=39.345851, expected=37.123697
+predicted=38.482776, expected=35.889780
+predicted=37.787518, expected=38.786082
+predicted=37.947824, expected=37.513605
+predicted=37.788017, expected=35.422025
+predicted=37.011248, expected=37.385742
+predicted=36.927266, expected=35.080396
+predicted=36.421482, expected=38.262192
+predicted=37.014571, expected=35.832465
+predicted=36.611363, expected=36.519681
+predicted=36.436409, expected=37.397818
+predicted=36.802083, expected=35.343821
+predicted=36.350182, expected=34.354667
+predicted=35.891002, expected=33.624068
+predicted=35.033508, expected=36.628014
+predicted=35.467306, expected=34.424783
+predicted=35.219479, expected=32.047511
+predicted=34.107731, expected=35.075163
+predicted=34.211566, expected=36.234203
+predicted=34.839115, expected=33.505611
+predicted=34.645637, expected=33.162989
+predicted=33.991191, expected=31.294504
+predicted=33.142776, expected=31.744000
+predicted=32.871002, expected=32.033536
+predicted=32.557490, expected=34.666913
+predicted=32.907056, expected=34.075525
+predicted=33.238256, expected=33.125159
+predicted=33.135590, expected=30.429118
+predicted=32.441654, expected=33.847045
+predicted=32.850286, expected=33.898641
+predicted=33.341777, expected=32.899771
+predicted=33.133845, expected=33.726050
+predicted=33.175935, expected=30.485319
+predicted=32.374848, expected=29.959128
+predicted=31.841589, expected=31.505555
+predicted=31.641206, expected=30.120580
+predicted=31.124560, expected=28.384649
+predicted=30.244601, expected=29.265931
+predicted=29.656390, expected=31.723235
+predicted=30.221046, expected=29.939864
+predicted=30.243552, expected=30.987039
+predicted=30.304011, expected=28.470977
+predicted=29.751013, expected=27.688317
+predicted=29.236276, expected=30.999337
+predicted=29.791268, expected=30.064939
+predicted=29.796981, expected=31.623118
+predicted=30.306878, expected=30.758232
+predicted=30.320238, expected=27.383441
+predicted=29.560738, expected=26.694755
+predicted=28.874775, expected=28.034195
+predicted=28.528335, expected=28.423145
+predicted=28.530482, expected=26.826112
+predicted=27.845995, expected=27.814157
+predicted=27.545401, expected=26.067893
+predicted=27.134476, expected=28.148750
+predicted=27.476481, expected=30.617938
+predicted=28.379644, expected=25.927718
+predicted=27.672476, expected=30.518941
+predicted=28.437774, expected=30.451295
+predicted=29.056372, expected=29.768454
+predicted=29.527464, expected=28.340844
+predicted=29.248765, expected=26.971605
+predicted=28.400254, expected=27.747777
+predicted=28.469556, expected=27.991499
+predicted=28.258018, expected=26.126665
+predicted=27.524385, expected=26.305164
+predicted=26.977711, expected=26.057168
+predicted=26.618949, expected=27.564978
+predicted=26.912826, expected=29.685082
+predicted=27.680513, expected=29.638388
+predicted=28.199279, expected=29.313766
+predicted=28.596495, expected=27.031107
+predicted=28.225531, expected=26.782119
+predicted=27.948517, expected=25.774753
+predicted=27.419820, expected=29.728775
+predicted=27.999516, expected=25.454806
+predicted=27.223075, expected=28.252140
+predicted=27.263538, expected=28.275706
+predicted=27.571410, expected=25.883960
+predicted=27.162269, expected=26.481941
+predicted=27.059807, expected=28.098130
+predicted=27.127117, expected=25.467844
+predicted=26.879093, expected=28.050641
+predicted=27.080037, expected=26.851716
+predicted=26.907578, expected=25.245784
+predicted=26.521958, expected=29.724795
+predicted=27.412107, expected=25.895582
+predicted=26.974407, expected=29.408124
+predicted=27.757259, expected=26.722459
+predicted=27.408854, expected=27.542914
+predicted=27.454567, expected=28.041001
+predicted=27.809693, expected=28.090624
+predicted=27.751651, expected=26.383687
+predicted=27.536802, expected=26.494148
+predicted=27.028201, expected=27.717004
+predicted=27.274677, expected=28.987124
+predicted=27.809177, expected=31.043507
+predicted=28.718743, expected=28.789344
+predicted=28.727573, expected=26.664586
+predicted=28.197896, expected=26.964129
+predicted=27.926684, expected=31.173465
+predicted=28.977559, expected=28.751139
+predicted=29.052147, expected=26.802694
+predicted=28.153836, expected=28.679734
+predicted=28.137545, expected=29.564347
+predicted=28.732676, expected=31.453787
+predicted=29.721319, expected=28.077448
+predicted=29.083859, expected=30.459512
+predicted=29.386714, expected=28.526592
+predicted=29.373123, expected=30.024580
+predicted=29.630951, expected=31.661094
+predicted=30.229966, expected=28.633677
+predicted=29.688904, expected=29.494900
+predicted=29.687911, expected=28.484057
+predicted=29.285157, expected=30.194309
+predicted=29.658757, expected=30.768667
+predicted=29.979378, expected=32.169386
+predicted=30.445836, expected=32.469286
+predicted=31.117873, expected=31.726022
+predicted=31.351672, expected=29.459887
+predicted=30.983285, expected=30.761033
+predicted=30.965121, expected=32.229857
+predicted=31.425154, expected=34.855562
+predicted=32.399536, expected=31.820074
+predicted=32.177533, expected=34.786786
+predicted=32.806223, expected=31.858929
+predicted=32.801290, expected=32.536529
+predicted=32.872590, expected=34.316782
+predicted=33.351646, expected=35.316500
+predicted=33.835463, expected=33.858893
+predicted=33.986079, expected=33.462055
+predicted=33.660669, expected=35.070303
+predicted=34.190300, expected=35.127374
+predicted=34.649184, expected=32.402145
+predicted=34.032638, expected=37.160763
+predicted=34.741320, expected=36.490294
+predicted=35.374567, expected=37.461319
+predicted=36.095311, expected=33.186906
+predicted=35.261197, expected=37.492511
+predicted=35.799004, expected=36.066149
+predicted=36.283364, expected=38.526086
+predicted=36.824094, expected=34.973262
+predicted=36.338088, expected=34.324099
+predicted=35.555103, expected=38.796882
+predicted=36.702091, expected=36.215993
+predicted=36.618321, expected=38.849811
+predicted=37.205911, expected=39.078494
+predicted=37.591906, expected=35.434572
+predicted=37.168517, expected=40.305194
+predicted=38.178012, expected=36.874960
+predicted=37.878057, expected=36.431112
+predicted=37.579195, expected=36.875757
+predicted=37.225271, expected=37.966661
+predicted=37.361519, expected=37.598354
+predicted=37.625216, expected=38.773814
+predicted=37.686382, expected=41.765949
+predicted=38.870888, expected=42.577084
+predicted=40.122899, expected=37.987084
+predicted=39.684904, expected=38.790275
+predicted=39.415224, expected=38.810179
+predicted=39.455423, expected=38.990866
+predicted=39.497920, expected=42.106976
+predicted=40.064928, expected=41.697212
+predicted=40.321402, expected=43.937711
+predicted=41.451667, expected=41.951532
+predicted=41.728311, expected=44.561060
+predicted=42.681724, expected=41.177780
+predicted=42.561197, expected=44.759924
+predicted=43.152567, expected=43.892695
+predicted=43.546277, expected=41.923212
+predicted=43.039649, expected=44.658854
+predicted=43.497630, expected=43.984853
+predicted=43.619786, expected=42.025028
+predicted=43.374292, expected=46.396320
+predicted=44.027884, expected=46.558391
+predicted=44.830774, expected=47.121364
+predicted=45.697740, expected=45.716580
+predicted=45.659015, expected=44.462050
+predicted=45.371140, expected=45.865062
+predicted=45.786762, expected=44.420001
+predicted=45.438366, expected=48.590943
+predicted=46.246542, expected=48.609968
+predicted=46.884534, expected=47.578431
+predicted=47.107579, expected=44.726354
+predicted=46.497743, expected=49.386041
+predicted=47.321186, expected=48.425573
+predicted=48.025837, expected=50.256069
+predicted=48.588821, expected=49.868632
+predicted=48.862687, expected=50.031677
+predicted=49.222930, expected=49.991230
+predicted=49.772678, expected=49.909106
+predicted=49.829132, expected=46.714606
+predicted=49.060745, expected=48.816666
+predicted=48.865677, expected=50.871794
+predicted=49.463504, expected=50.624216
+predicted=49.818897, expected=51.229856
+predicted=50.112987, expected=50.175547
+predicted=50.052830, expected=52.259101
+predicted=50.917659, expected=50.485340
+predicted=50.995657, expected=51.008372
+predicted=50.965463, expected=52.139982
+predicted=51.320995, expected=53.443914
+predicted=51.963933, expected=52.288486
+predicted=52.186738, expected=51.106575
+predicted=51.779205, expected=50.685151
+predicted=51.536159, expected=53.045839
+predicted=52.066275, expected=52.445563
+predicted=52.252805, expected=53.271062
+predicted=52.402584, expected=51.409316
+predicted=52.074482, expected=53.845767
+predicted=52.611724, expected=55.191620
+predicted=53.556953, expected=51.662006
+predicted=53.051607, expected=52.794402
+predicted=52.904880, expected=52.715891
+predicted=52.855239, expected=52.838177
+predicted=53.038036, expected=52.177940
+predicted=52.731782, expected=55.537926
+predicted=53.311033, expected=55.972602
+predicted=54.245614, expected=52.094166
+predicted=53.675854, expected=54.794327
+predicted=53.936801, expected=56.849038
+predicted=54.916385, expected=55.103197
+predicted=55.249143, expected=55.247400
+predicted=55.131536, expected=54.948940
+predicted=54.956275, expected=55.098326
+predicted=55.251541, expected=57.519666
+predicted=55.960033, expected=54.556166
+predicted=55.503887, expected=53.316260
+predicted=54.838997, expected=55.853295
+predicted=55.087334, expected=53.727239
+predicted=54.814949, expected=58.095718
+predicted=55.721870, expected=57.076738
+predicted=55.968058, expected=56.494553
+predicted=56.162541, expected=54.673675
+predicted=55.870341, expected=55.365779
+predicted=55.720960, expected=55.563188
+predicted=55.921146, expected=58.828403
+predicted=56.621732, expected=55.344592
+predicted=56.225185, expected=59.194462
+predicted=56.918828, expected=57.932309
+predicted=57.400253, expected=58.907642
+predicted=57.957234, expected=58.108457
+predicted=58.155775, expected=59.501985
+predicted=58.440645, expected=57.810347
+predicted=58.535233, expected=55.813041
+predicted=57.670895, expected=57.653082
+predicted=57.644058, expected=58.477925
+predicted=57.880629, expected=56.123249
+predicted=57.405053, expected=57.109588
+predicted=57.080849, expected=56.217331
+predicted=56.792984, expected=58.418941
+predicted=57.366353, expected=57.166842
+predicted=57.324313, expected=58.570120
+predicted=57.529161, expected=55.795908
+predicted=57.142148, expected=59.289320
+predicted=57.697535, expected=56.341593
+predicted=57.522444, expected=55.014433
+predicted=56.684119, expected=55.296333
+predicted=56.255050, expected=55.630424
+predicted=55.965334, expected=58.859564
+predicted=56.875295, expected=59.327890
+predicted=57.397494, expected=55.199096
+predicted=56.747386, expected=56.160220
+predicted=56.580569, expected=57.264145
+predicted=56.954599, expected=59.627375
+predicted=57.922496, expected=55.065380
+predicted=57.030559, expected=55.159132
+predicted=56.184302, expected=58.550449
+predicted=56.992346, expected=54.878520
+predicted=56.569160, expected=56.986599
+predicted=56.566070, expected=58.870213
+predicted=56.974918, expected=55.605398
+predicted=56.767787, expected=57.399664
+predicted=56.997932, expected=55.634617
+predicted=56.498810, expected=56.890328
+predicted=56.765037, expected=55.439710
+predicted=56.406896, expected=54.302391
+predicted=55.610386, expected=56.536679
+predicted=55.879091, expected=55.807788
+predicted=55.805821, expected=56.648572
+predicted=56.042623, expected=57.714649
+predicted=56.410938, expected=55.799158
+predicted=56.305429, expected=54.864853
+predicted=56.010064, expected=58.198347
+predicted=56.582690, expected=55.577196
+predicted=56.449333, expected=58.004890
+predicted=56.820350, expected=54.473532
+predicted=56.083028, expected=57.258472
+predicted=56.393405, expected=53.148712
+predicted=55.690793, expected=56.615813
+predicted=55.696004, expected=53.974176
+predicted=55.341973, expected=55.567469
+predicted=55.135264, expected=56.246790
+predicted=55.539973, expected=53.976982
+predicted=54.968373, expected=55.341681
+predicted=55.160196, expected=54.135025
+predicted=54.797579, expected=53.295108
+predicted=54.457849, expected=53.194409
+predicted=54.021071, expected=55.606552
+predicted=54.313908, expected=52.577519
+predicted=53.931749, expected=54.039495
+predicted=53.758299, expected=53.136860
+predicted=53.585167, expected=51.540737
+predicted=53.056280, expected=52.441339
+predicted=52.869919, expected=52.949243
+predicted=52.722791, expected=52.435943
+predicted=52.695394, expected=53.892393
+predicted=52.886916, expected=49.871911
+predicted=52.044484, expected=51.628611
+predicted=51.892759, expected=49.151769
+predicted=51.180651, expected=51.268821
+predicted=51.075179, expected=52.022752
+predicted=51.309993, expected=51.938424
+predicted=51.274972, expected=50.606693
+predicted=51.154004, expected=53.062230
+predicted=51.575302, expected=52.202271
+predicted=52.014678, expected=50.081729
+predicted=51.510898, expected=50.303578
+predicted=51.075092, expected=50.054281
+predicted=50.772705, expected=47.220499
+predicted=49.867722, expected=47.894297
+predicted=49.039730, expected=47.860542
+predicted=48.531186, expected=49.800216
+predicted=48.825043, expected=47.980917
+predicted=48.512732, expected=48.989323
+predicted=48.434517, expected=46.786883
+predicted=48.084163, expected=48.615758
+predicted=48.215060, expected=49.315067
+predicted=48.629321, expected=48.020441
+predicted=48.374185, expected=45.400145
+predicted=47.524736, expected=45.707519
+predicted=46.852822, expected=48.342048
+predicted=47.375863, expected=48.230324
+predicted=47.621890, expected=45.310184
+predicted=46.788660, expected=44.195611
+predicted=45.866593, expected=43.405006
+predicted=45.256088, expected=43.966316
+predicted=44.956735, expected=45.830266
+predicted=45.020714, expected=44.909185
+predicted=44.762288, expected=42.342359
+predicted=43.969299, expected=43.264544
+predicted=43.701510, expected=43.896704
+predicted=43.867650, expected=41.644760
+predicted=43.291481, expected=43.167487
+predicted=43.017285, expected=44.563327
+predicted=43.345385, expected=40.939263
+predicted=42.776340, expected=43.326511
+predicted=42.807950, expected=43.263088
+predicted=42.905486, expected=43.093214
+
+rmse = sqrt(mean_squared_error(test, predictions))
+print('Test RMSE: %.3f' % rmse)
+plt.plot(test)
+plt.plot(predictions, color='red')
+plt.show()
+     
+Test RMSE: 1.707
+
+
+def evaluate_arima_model(X, arima_order):
+    # Prepare training dataset.
+    train_size = int(len(X) * 0.76)
+    train, test = X[0:train_size], X[train_size:]
+    history = [x for x in train]
+    # Make predictions.
+    predictions = list()
+    for t in range(len(test)):
+        model = ARIMA(history, order=arima_order)
+        model_fit = model.fit()
+        yhat = model_fit.forecast()[0]
+        predictions.append(yhat)
+        history.append(test[t])
+    # Calculate out of sample error.
+    error = mean_squared_error(test, predictions)
+    print(error)
+
+arima_order = (5, 1, 0)
+error = evaluate_arima_model(X, arima_order)
+     
+2.7845327136507927
+
+def evaluate_models(dataset, p_values, d_values, q_values):
+    dataset = dataset.astype('float64')
+    best_score, best_cfg = float("inf"), None
+    for p in p_values:
+        for d in d_values:
+            for q in q_values:
+                order = (p,d,q)
+                try:
+                    mse = evaluate_arima_model(dataset, order)
+                    if mse < best_score:
+                        best_score, best_cfg = mse, order
+                    print('ARIMA%s MSE=%.3f' % (order,mse))
+                except:
+                    continue
+    print('Best ARIMA%s MSE=%.3f' % (best_cfg, best_score))
+
+p_values = [0, 1, 2, 3, 4, 5]
+d_values = [0, 1, 2]
+q_values = [0, 1, 2, 3, 4, 5]
+evaluate_models(series.values, p_values, d_values, q_values)
+     
+111.04778217086525
+39.045810562879446
+20.687402664881002
+14.40183301461889
+11.184031650537142
+
+Under normal conditions the evaluation of the arima model would result in an optimal combination. However, it is an extremely time-consuming process and unfortunately the colab has limited computing capabilities so it had to be discontinued. Nevertheless, the combination (5, 1, 0) carried out from the above acf and pacf plots, presented satisfactory results with a relatively small mean squared error.
+
+(h.) Using some graph mining metric on the community graph to suggest to a user a disk that he has not selected [graph mining lecture].
+
+mydb = mysql.connector.connect(
+    host=db_host,
+    port=db_port,
+    user=db_user,
+    password=db_password,
+    database=db_database
+)
+
+cursor = mydb.cursor()
+
+cursor.execute("SELECT * FROM User_Records")
+rows = cursor.fetchall()
+columns = [column[0] for column in cursor.description]
+df_user_records = pd.DataFrame(rows, columns=columns)
+
+cursor.execute("SELECT r.record_id, r.name AS record_name, b.name AS band_name, b.genre FROM Records r INNER JOIN Bands b ON r.band_id = b.band_id")
+rows = cursor.fetchall()
+columns = [column[0] for column in cursor.description]
+df_record_details = pd.DataFrame(rows, columns=columns)
+record_details_dict = df_record_details.set_index('record_id')[['record_name', 'band_name', 'genre']].to_dict('index')
+
+cursor.close()
+mydb.close()
+     
+
+G = nx.barabasi_albert_graph(20,3)
+degree_centrality = nx.degree_centrality(G)
+
+for user_id in G.nodes:
+    connected_users = list(G.neighbors(user_id))
+    target_user_records = df_user_records[df_user_records['user_id'] == user_id]['record_id'].tolist()
+    connected_users_records = df_user_records[df_user_records['user_id'].isin(connected_users)]['record_id'].tolist()
+    recommended_records = list(set(connected_users_records) - set(target_user_records))
+    recommended_records = recommended_records[:1]
+
+    for record_id in recommended_records:
+        details = record_details_dict.get(record_id, {'record_name': 'Unknown', 'band_name': 'Unknown', 'genre': 'Unknown'})
+        print(f"Recommended record for user {user_id}: Record ID: {record_id}, Record Name: {details['record_name']}, Band Name: {details['band_name']}, Genre: {details['genre']}")
+     
+Recommended record for user 0: Record ID: 380, Record Name: Lana Del Rey - Born To Die, Band Name: Lana Del Rey, Genre: female vocalists
+Recommended record for user 1: Record ID: 512, Record Name: Eminem - Stan, Band Name: Eminem, Genre: rap
+Recommended record for user 2: Record ID: 512, Record Name: Eminem - Stan, Band Name: Eminem, Genre: rap
+Recommended record for user 3: Record ID: 608, Record Name: Billie Eilish - My Boy, Band Name: Billie Eilish, Genre: pop
+Recommended record for user 4: Record ID: 532, Record Name: Kali Uchis - Isolation, Band Name: Kali Uchis, Genre: rnb
+Recommended record for user 5: Record ID: 512, Record Name: Eminem - Stan, Band Name: Eminem, Genre: rap
+Recommended record for user 6: Record ID: 532, Record Name: Kali Uchis - Isolation, Band Name: Kali Uchis, Genre: rnb
+Recommended record for user 7: Record ID: 512, Record Name: Eminem - Stan, Band Name: Eminem, Genre: rap
+Recommended record for user 8: Record ID: 521, Record Name: Eminem - E, Band Name: Eminem, Genre: rap
+Recommended record for user 9: Record ID: 532, Record Name: Kali Uchis - Isolation, Band Name: Kali Uchis, Genre: rnb
+Recommended record for user 10: Record ID: 403, Record Name: Lil Uzi Vert - You Was Right, Band Name: LIL UZI VERT, Genre: trap
+Recommended record for user 11: Record ID: 407, Record Name: Lil Uzi Vert - Eternal Atake Deluxe / LUV Vs. The World 2, Band Name: LIL UZI VERT, Genre: trap
+Recommended record for user 12: Record ID: 384, Record Name: Lana Del Rey - Lana Del Rey A.K.A. Lizzy Grant, Band Name: Lana Del Rey, Genre: female vocalists
+Recommended record for user 13: Record ID: 512, Record Name: Eminem - Stan, Band Name: Eminem, Genre: rap
+Recommended record for user 14: Record ID: 532, Record Name: Kali Uchis - Isolation, Band Name: Kali Uchis, Genre: rnb
+Recommended record for user 15: Record ID: 550, Record Name: Don Toliver Feat. Kali Uchis - 4 Me, Band Name: Kali Uchis, Genre: rnb
+Recommended record for user 16: Record ID: 512, Record Name: Eminem - Stan, Band Name: Eminem, Genre: rap
+Recommended record for user 17: Record ID: 512, Record Name: Eminem - Stan, Band Name: Eminem, Genre: rap
+Recommended record for user 18: Record ID: 641, Record Name: Paramore - All We Know Is Falling, Band Name: Paramore, Genre: rock
+Recommended record for user 19: Record ID: 640, Record Name: Paramore - Playing God, Band Name: Paramore, Genre: rock
+
+The technique of finding a recommended disk, based on the degree of centrality, was used. In short, this is a measure of the number of connections a node has, i.e. here, a user. Thus, we find the most popular disks, that is, the disks with the most user connections.
+
+This will of course have the effect, that any disc that is liked by users who tend to have more edges with other users in the community, will be recommended more often.
+
+By this we mean that if a multi-edge user likes the record "Eminem - Stan", then that record has an extremely high probability of being recommended quite often to any other user who doesn't already like it.
+
+The code essentially traverses the graph, identifies each user's connections, and suggests a disk preferred by connected users but not by the target user. It uses degree centrality to explore the network structure and recommend disks based on user connections.
+
+Finally, the structure of the code is such that it focuses on simulating user-to-user recommendations based on graph mining techniques, incorporating elements such as graph representation, degree centrality, filtering, and targeted recommendations, yielding meaningful results to each target user. bold text
+
+(i.) Let be a series of users (user_money_rates) who have certain amounts of money and have expressed their calibrated desire to buy a series of discs. Desire is expressed with a score from 1 to 5 for each disc and each disc has a monetary cost (album_price). Use a genetic algorithm to select the discs to suggest users buy in order to maximize the overall desirability of the discs, given each user's available money. Compare the results with a random selection of disks. [genetic algorithms lecture].
+
+users_money = 200 + np.ceil(100*np.random.rand(100))
+user_money_rates=np.empty_like(np.append(users_money[0],np.random.randint(5, size=100)+1))
+for i in users_money:
+  user_money_rates=np.vstack([user_money_rates,np.append(i,np.random.randint(5, size=100)+1)])
+user_money_rates=np.delete(user_money_rates,(0),axis=0)
+
+album_price=np.random.randint(50, size=100)+1
+np.savetxt("gdrive/My Drive/user_money_rates.csv", user_money_rates, delimiter=",")
+np.savetxt("gdrive/My Drive/album_price.csv", album_price, delimiter=",")
+     
+
+user_money_rates = pd.read_csv("gdrive/My Drive/user_money_rates.csv", header=None)
+album_price = pd.read_csv("gdrive/My Drive/album_price.csv", header=None)
+
+def calculate_fitness(individual, prices, rates, money):
+    cost = np.sum(individual * prices)
+    value = np.sum(individual * rates)
+    if cost > money:
+        return 0
+    else:
+        return value
+
+def generate_individual(n_discs):
+    return np.random.randint(2, size=n_discs)
+
+def tournament_selection(population, fitnesses, tournament_size=3):
+    selected_indices = np.random.choice(np.arange(len(population)), size=tournament_size)
+    tournament_individuals = population[selected_indices]
+    tournament_fitnesses = fitnesses[selected_indices]
+    winner_index = selected_indices[np.argmax(tournament_fitnesses)]
+    return population[winner_index]
+
+def crossover(parents): # One point crossover.
+    crossover_point = np.random.randint(len(parents[0]))
+    child1 = np.concatenate((parents[0][:crossover_point], parents[1][crossover_point:]))
+    child2 = np.concatenate((parents[1][:crossover_point], parents[0][crossover_point:]))
+    return child1, child2
+
+def mutation(individual, prices, money, mutation_rate=0.01):
+    for i in range(len(individual)):
+        if np.random.rand() < mutation_rate:
+            individual[i] = 1 - individual[i]
+    # Repair function.
+    while np.sum(individual * prices) > money:
+        selected_discs = [i for i, x in enumerate(individual) if x == 1]
+        individual[np.random.choice(selected_discs)] = 0
+    return individual
+
+def genetic_algorithm(n_individuals, n_discs, prices, rates, money, n_generations=150, elitism_size=8):
+    population = np.array([generate_individual(n_discs) for _ in range(n_individuals)])
+    best_fitnesses = []
+
+    for _ in range(n_generations):
+        fitnesses = np.array([calculate_fitness(individual, prices, rates, money) for individual in population])
+        best_fitnesses.append(np.max(fitnesses))
+
+        # Elitism: keep the best individuals.
+        elite_indices = np.argsort(fitnesses)[-elitism_size:]
+        elite_individuals = population[elite_indices]
+
+        new_population = []
+        for _ in range((n_individuals - elitism_size) // 2):
+            parent1 = tournament_selection(population, fitnesses)
+            parent2 = tournament_selection(population, fitnesses)
+            child1, child2 = crossover([parent1, parent2])
+            new_population.append(mutation(child1, album_price, user_money))
+            new_population.append(mutation(child2, album_price, user_money))
+
+        population = np.concatenate((np.array(new_population), elite_individuals))
+
+    fitnesses = np.array([calculate_fitness(individual, prices, rates, money) for individual in population])
+    best_individual = population[np.argmax(fitnesses)]
+    return best_individual, best_fitnesses
+
+def get_selected_discs(individual):
+    return [i for i, x in enumerate(individual) if x == 1]
+     
+This greedy selection works by finding the ratio of desirability to price, and then selects discs until each user's money runs out.
+
+def greedy_selection(n_discs, prices, rates, money):
+    individual = np.zeros(n_discs, dtype=int)
+    disc_indices = np.argsort(-rates/prices)
+    for i in disc_indices:
+        if prices[i] <= money:
+            individual[i] = 1
+            money -= prices[i]
+
+    return individual
+     
+The genetic algorithm runs below and then we plot the best fitness from generation to generation without any comparison. In the next code block there is also the comparison using "greedy selection".
+
+album_price = album_price.values.flatten()
+for i in range(user_money_rates.shape[0]):
+    user_money = user_money_rates.iloc[i, 0]
+    user_rates = user_money_rates.iloc[i, 1:]
+    best_individual, best_fitnesses = genetic_algorithm(100, len(album_price), album_price, user_rates, user_money, elitism_size=8)
+    selected_discs = get_selected_discs(best_individual)
+    print(f"User {i+1} should buy discs {selected_discs}")
+
+    # Plot the best fitnesses
+    plt.figure()
+    plt.plot(best_fitnesses)
+    plt.xlabel('Generation')
+    plt.ylabel('Best Fitness')
+    plt.title(f'User {i+1}')
+    plt.show()
+     
+User 1 should buy discs [6, 10, 14, 18, 19, 22, 23, 28, 30, 37, 39, 40, 43, 48, 53, 56, 57, 60, 61, 71, 73, 74, 84, 92, 93, 97, 98]
+
+User 2 should buy discs [4, 6, 7, 10, 14, 18, 19, 22, 23, 28, 30, 33, 39, 43, 46, 53, 56, 60, 61, 70, 72, 73, 74, 79, 93, 97, 98]
+
+User 3 should buy discs [6, 7, 10, 14, 18, 19, 22, 30, 33, 37, 39, 41, 43, 53, 56, 57, 60, 61, 70, 73, 74, 79, 92, 93, 94, 97, 98]
+
+User 4 should buy discs [4, 6, 7, 10, 11, 14, 18, 19, 22, 33, 37, 39, 40, 41, 43, 48, 53, 54, 56, 57, 60, 61, 70, 71, 72, 73, 74, 93, 94, 97, 98]
+
+User 5 should buy discs [3, 7, 10, 12, 14, 18, 19, 23, 26, 28, 33, 48, 53, 56, 61, 70, 71, 73, 74, 79, 86, 92, 93, 98]
+
+User 6 should buy discs [4, 10, 14, 18, 19, 22, 23, 39, 43, 53, 56, 60, 61, 70, 71, 72, 73, 74, 78, 84, 86, 88, 93, 94, 97, 98]
+
+User 7 should buy discs [6, 7, 10, 14, 18, 19, 22, 28, 30, 33, 36, 39, 40, 43, 48, 53, 54, 56, 57, 60, 61, 65, 72, 73, 74, 86, 93, 94, 95, 98]
+
+User 8 should buy discs [7, 10, 14, 18, 30, 39, 40, 43, 48, 53, 56, 57, 60, 61, 65, 70, 72, 73, 78, 84, 92, 93, 94, 97, 98]
+
+User 9 should buy discs [4, 6, 10, 14, 18, 19, 26, 28, 37, 40, 43, 48, 54, 56, 57, 61, 70, 73, 74, 78, 80, 84, 86, 93, 94, 95, 97, 98]
+
+User 10 should buy discs [6, 7, 10, 14, 18, 19, 30, 33, 39, 40, 48, 53, 54, 56, 57, 61, 70, 71, 72, 73, 74, 84, 86, 93, 94, 95, 96, 97]
+
+User 11 should buy discs [4, 10, 14, 18, 19, 23, 30, 36, 39, 43, 48, 53, 56, 57, 59, 61, 65, 70, 73, 88, 93, 98]
+
+User 12 should buy discs [6, 10, 14, 17, 18, 19, 22, 23, 28, 33, 37, 39, 40, 43, 53, 54, 56, 60, 61, 70, 71, 72, 73, 74, 78, 79, 86, 92, 93, 97, 98]
+
+User 13 should buy discs [6, 7, 14, 18, 19, 23, 28, 30, 37, 39, 40, 48, 53, 54, 56, 57, 60, 61, 65, 73, 74, 84, 86, 89, 93, 94, 97, 98]
+
+User 14 should buy discs [6, 7, 10, 14, 18, 19, 23, 36, 40, 48, 53, 56, 60, 61, 70, 71, 72, 73, 74, 78, 86, 92, 93, 94, 97, 98]
+
+User 15 should buy discs [7, 14, 18, 19, 28, 33, 39, 40, 43, 48, 53, 56, 59, 60, 61, 70, 72, 73, 74, 84, 93, 95, 98]
+
+User 16 should buy discs [4, 6, 7, 14, 18, 22, 23, 26, 39, 40, 48, 53, 56, 57, 59, 60, 61, 70, 71, 72, 73, 74, 78, 79, 86, 94, 97, 98]
+
+User 17 should buy discs [3, 10, 14, 18, 30, 33, 39, 43, 48, 53, 56, 60, 61, 70, 72, 73, 74, 79, 86, 89, 92, 93, 94, 96, 98]
+
+User 18 should buy discs [6, 10, 14, 18, 22, 23, 33, 39, 48, 53, 54, 56, 57, 61, 65, 70, 71, 73, 74, 86, 92, 93, 97, 98]
+
+User 19 should buy discs [6, 10, 14, 17, 18, 19, 22, 23, 30, 33, 40, 43, 53, 54, 56, 57, 59, 60, 61, 64, 70, 72, 73, 74, 84, 86, 93, 94, 97, 98]
+
+User 20 should buy discs [4, 6, 10, 14, 18, 19, 25, 28, 30, 39, 41, 43, 53, 54, 56, 60, 61, 71, 72, 73, 74, 84, 89, 93, 94, 97, 98]
+
+User 21 should buy discs [6, 10, 14, 18, 19, 28, 30, 33, 37, 40, 43, 48, 54, 56, 59, 60, 61, 71, 72, 73, 74, 86, 89, 92, 93, 94]
+
+User 22 should buy discs [6, 7, 10, 11, 14, 18, 19, 23, 26, 33, 37, 48, 53, 54, 56, 57, 59, 61, 71, 72, 73, 74, 78, 93, 95, 97, 98]
+
+User 23 should buy discs [6, 7, 10, 14, 18, 22, 28, 37, 40, 43, 48, 53, 54, 56, 57, 60, 61, 70, 71, 73, 74, 78, 92, 93, 94, 97, 98]
+
+User 24 should buy discs [4, 6, 10, 14, 18, 19, 22, 28, 30, 39, 40, 46, 48, 53, 54, 56, 60, 61, 70, 72, 73, 79, 84, 93, 97, 98]
+
+User 25 should buy discs [7, 10, 14, 18, 22, 23, 25, 33, 37, 39, 40, 43, 48, 53, 56, 57, 60, 61, 65, 68, 71, 73, 74, 78, 84, 92, 93, 98]
+
+User 26 should buy discs [4, 10, 14, 17, 18, 23, 33, 37, 40, 43, 48, 53, 54, 56, 57, 60, 61, 70, 71, 73, 74, 86, 93, 97]
+
+User 27 should buy discs [4, 6, 7, 14, 18, 19, 23, 26, 28, 37, 39, 40, 41, 43, 60, 61, 70, 71, 72, 73, 74, 78, 79, 95, 97, 98]
+
+User 28 should buy discs [4, 6, 7, 10, 12, 14, 18, 22, 25, 30, 43, 56, 59, 60, 61, 65, 70, 71, 72, 73, 74, 78, 93, 94, 97, 98]
+
+User 29 should buy discs [4, 6, 7, 14, 18, 22, 23, 28, 33, 37, 39, 40, 43, 53, 56, 57, 60, 61, 65, 71, 73, 74, 79, 86, 93, 94, 97, 98]
+
+User 30 should buy discs [6, 7, 10, 14, 18, 19, 22, 23, 30, 37, 39, 41, 53, 56, 57, 60, 61, 65, 70, 71, 72, 73, 74, 79, 92, 93, 94, 97]
+
+User 31 should buy discs [4, 6, 10, 14, 18, 19, 23, 25, 30, 37, 43, 48, 53, 56, 57, 59, 61, 70, 73, 74, 78, 84, 93, 94, 97, 98]
+
+User 32 should buy discs [5, 10, 14, 18, 22, 23, 30, 33, 39, 53, 54, 56, 57, 59, 61, 71, 72, 73, 74, 89, 93, 97, 98]
+
+User 33 should buy discs [6, 10, 14, 18, 19, 25, 28, 40, 43, 48, 49, 53, 56, 57, 61, 71, 72, 73, 74, 79, 88, 92, 93, 97]
+
+User 34 should buy discs [4, 7, 10, 14, 18, 19, 22, 23, 28, 37, 39, 43, 53, 54, 56, 61, 65, 70, 71, 74, 86, 93, 94, 98]
+
+User 35 should buy discs [4, 6, 7, 10, 14, 18, 36, 39, 40, 45, 48, 53, 56, 60, 61, 70, 72, 73, 78, 84, 93, 96, 97, 98]
+
+User 36 should buy discs [4, 6, 7, 14, 17, 18, 19, 26, 30, 37, 39, 43, 45, 54, 56, 59, 60, 61, 65, 70, 71, 73, 74, 79, 88, 93, 98]
+
+User 37 should buy discs [6, 10, 14, 17, 18, 23, 25, 28, 37, 39, 40, 41, 43, 53, 54, 56, 61, 65, 70, 71, 72, 74, 86, 92, 93, 97, 98]
+
+User 38 should buy discs [4, 6, 10, 14, 18, 19, 22, 39, 40, 43, 48, 53, 56, 61, 65, 70, 71, 72, 73, 74, 78, 79, 86, 89, 93, 97, 98]
+
+User 39 should buy discs [4, 6, 10, 14, 18, 19, 23, 33, 39, 40, 43, 53, 54, 56, 57, 60, 61, 70, 71, 73, 74, 86, 89, 93, 94, 97, 98]
+
+User 40 should buy discs [6, 14, 18, 19, 23, 26, 28, 30, 37, 39, 43, 46, 53, 54, 56, 57, 61, 71, 72, 73, 74, 84, 86, 93, 97, 98]
+
+User 41 should buy discs [4, 6, 10, 12, 14, 17, 18, 19, 23, 33, 37, 43, 53, 56, 57, 61, 68, 70, 71, 72, 74, 79, 84, 86, 93, 94, 97, 98]
+
+User 42 should buy discs [6, 10, 14, 18, 19, 23, 30, 37, 39, 40, 43, 46, 54, 56, 61, 64, 70, 73, 74, 78, 80, 84, 86, 93, 97, 98]
+
+User 43 should buy discs [4, 6, 10, 14, 18, 19, 23, 30, 39, 40, 48, 53, 54, 56, 57, 61, 65, 70, 71, 72, 73, 74, 78, 79, 80, 86, 92, 93, 97, 98]
+
+User 44 should buy discs [4, 6, 7, 10, 14, 18, 19, 23, 30, 39, 40, 43, 48, 53, 54, 56, 57, 60, 61, 71, 74, 79, 84, 86, 93, 94, 98]
+
+User 45 should buy discs [4, 6, 10, 14, 18, 19, 33, 39, 43, 53, 56, 57, 59, 61, 71, 72, 73, 74, 78, 86, 93, 95, 96, 97, 98]
+
+User 46 should buy discs [4, 6, 10, 14, 19, 22, 26, 30, 37, 39, 48, 53, 56, 57, 59, 61, 70, 72, 73, 74, 78, 84, 92, 93, 94, 97, 98]
+
+User 47 should buy discs [14, 18, 19, 30, 36, 39, 40, 43, 53, 56, 60, 61, 65, 71, 72, 73, 74, 78, 86, 89, 93, 94, 97, 98]
+
+User 48 should buy discs [6, 12, 14, 18, 22, 23, 30, 33, 37, 39, 41, 43, 48, 53, 56, 60, 61, 68, 70, 71, 73, 74, 80, 84, 93, 97, 98]
+
+User 49 should buy discs [6, 7, 14, 18, 19, 22, 23, 30, 33, 39, 40, 41, 43, 48, 53, 56, 57, 60, 61, 65, 70, 73, 74, 78, 84, 93]
+
+User 50 should buy discs [4, 6, 7, 10, 14, 18, 19, 22, 23, 33, 39, 48, 53, 56, 60, 61, 65, 71, 74, 78, 86, 92, 93, 97, 98]
+
+User 51 should buy discs [6, 10, 11, 14, 18, 19, 30, 33, 39, 40, 43, 48, 53, 56, 60, 61, 65, 70, 71, 72, 73, 74, 79, 86, 88, 92, 93, 94, 97, 98]
+
+User 52 should buy discs [4, 6, 7, 10, 14, 18, 19, 22, 23, 26, 37, 39, 43, 53, 56, 57, 61, 65, 70, 73, 74, 79, 86, 93, 94, 95, 97, 98]
+
+User 53 should buy discs [6, 7, 10, 14, 17, 18, 19, 22, 26, 30, 33, 39, 40, 48, 53, 56, 57, 60, 61, 65, 70, 72, 73, 74, 79, 92, 93, 97, 98]
+
+User 54 should buy discs [6, 14, 18, 19, 30, 33, 43, 48, 53, 54, 56, 59, 60, 61, 65, 70, 71, 72, 73, 78, 93, 94, 97, 98]
+
+User 55 should buy discs [4, 6, 14, 18, 30, 33, 36, 39, 40, 41, 53, 54, 56, 60, 61, 70, 71, 72, 73, 74, 78, 79, 88, 93, 97, 98]
+
+User 56 should buy discs [4, 6, 14, 18, 19, 23, 25, 30, 33, 39, 40, 43, 48, 53, 54, 56, 60, 61, 70, 73, 74, 93, 94, 98]
+
+User 57 should buy discs [6, 7, 10, 14, 18, 19, 22, 25, 28, 36, 40, 43, 53, 56, 57, 61, 70, 71, 72, 73, 74, 78, 84, 89, 92, 93, 98]
+
+User 58 should buy discs [6, 7, 10, 14, 18, 19, 22, 28, 33, 39, 40, 53, 54, 56, 57, 59, 60, 61, 72, 73, 74, 80, 84, 92, 93, 96, 97, 98]
+
+User 59 should buy discs [6, 10, 14, 18, 19, 26, 28, 30, 37, 39, 40, 43, 53, 56, 57, 59, 60, 61, 64, 65, 70, 72, 73, 79, 86, 93, 94, 98]
+
+User 60 should buy discs [4, 6, 7, 10, 14, 18, 19, 22, 23, 30, 39, 40, 43, 53, 56, 60, 61, 70, 71, 72, 73, 74, 86, 93, 94, 97, 98]
+
+User 61 should buy discs [4, 14, 15, 18, 19, 22, 23, 30, 33, 37, 39, 43, 53, 54, 56, 57, 61, 63, 71, 72, 73, 74, 89, 92, 93, 94, 98]
+
+User 62 should buy discs [4, 6, 7, 10, 14, 18, 19, 22, 28, 39, 40, 43, 53, 56, 57, 59, 60, 61, 65, 73, 74, 78, 86, 89, 96, 97, 98]
+
+User 63 should buy discs [6, 14, 18, 19, 23, 28, 37, 39, 40, 43, 48, 53, 56, 57, 61, 70, 72, 73, 78, 79, 84, 93, 95, 97, 98]
+
+User 64 should buy discs [6, 7, 10, 14, 18, 19, 22, 26, 28, 30, 39, 40, 43, 53, 54, 56, 60, 61, 65, 71, 73, 74, 78, 79, 84, 93, 97]
+
+User 65 should buy discs [6, 14, 18, 19, 23, 26, 37, 39, 40, 43, 48, 53, 54, 56, 59, 60, 61, 65, 70, 73, 74, 84, 86, 89, 93, 94, 97, 98]
+
+User 66 should buy discs [4, 7, 10, 11, 14, 18, 19, 23, 30, 37, 39, 43, 53, 56, 57, 61, 73, 74, 78, 86, 92, 93, 94, 97, 98]
+
+User 67 should buy discs [4, 6, 10, 18, 22, 23, 26, 28, 30, 39, 43, 53, 56, 57, 61, 70, 71, 73, 74, 86, 93, 94, 97, 98]
+
+User 68 should buy discs [4, 6, 7, 10, 14, 18, 23, 33, 39, 43, 53, 56, 60, 61, 70, 71, 72, 73, 74, 84, 86, 88, 93, 97, 98]
+
+User 69 should buy discs [6, 7, 10, 14, 18, 23, 30, 33, 39, 40, 48, 53, 56, 60, 61, 65, 70, 71, 72, 73, 74, 80, 86, 93, 98]
+
+User 70 should buy discs [4, 6, 10, 14, 22, 23, 30, 40, 43, 48, 53, 54, 56, 61, 70, 72, 73, 74, 79, 84, 86, 89, 92, 93, 94, 97, 98]
+
+User 71 should buy discs [6, 7, 10, 14, 18, 19, 22, 39, 40, 43, 53, 56, 59, 61, 65, 70, 72, 73, 74, 78, 84, 93, 94, 97, 98]
+
+User 72 should buy discs [4, 6, 7, 10, 14, 18, 22, 25, 26, 39, 43, 48, 53, 56, 57, 60, 61, 66, 73, 74, 86, 89, 92, 93, 97, 98]
+
+User 73 should buy discs [6, 7, 14, 18, 23, 26, 28, 33, 37, 39, 43, 53, 56, 57, 60, 61, 70, 71, 73, 74, 84, 86, 92, 93, 98]
+
+User 74 should buy discs [6, 7, 10, 14, 18, 22, 23, 26, 30, 39, 40, 43, 48, 53, 56, 60, 61, 65, 73, 74, 79, 89, 93, 94, 95, 97, 98]
+
+User 75 should buy discs [4, 6, 10, 14, 18, 19, 22, 26, 30, 39, 40, 43, 53, 54, 56, 57, 61, 71, 72, 73, 74, 79, 86, 93, 94, 97, 98]
+
+User 76 should buy discs [4, 6, 10, 14, 18, 19, 26, 33, 37, 43, 48, 53, 54, 56, 57, 60, 61, 63, 65, 71, 72, 78, 84, 86, 93, 95, 97, 98]
+
+User 77 should buy discs [6, 10, 14, 18, 19, 30, 37, 39, 48, 53, 54, 56, 60, 61, 65, 70, 71, 72, 73, 78, 84, 86, 88, 89, 93, 94, 97, 98]
+
+User 78 should buy discs [7, 10, 14, 17, 18, 22, 23, 28, 30, 33, 39, 43, 48, 53, 56, 59, 61, 65, 70, 72, 73, 74, 93, 95, 97, 98]
+
+User 79 should buy discs [6, 10, 14, 18, 19, 22, 23, 33, 39, 40, 43, 53, 56, 61, 71, 72, 73, 74, 78, 79, 84, 86, 93, 94, 95, 97, 98]
+
+User 80 should buy discs [7, 10, 14, 17, 18, 19, 22, 26, 28, 39, 40, 48, 53, 54, 56, 60, 65, 71, 73, 74, 78, 86, 88, 92, 93, 94, 97, 98]
+
+User 81 should buy discs [14, 18, 19, 22, 28, 30, 37, 39, 43, 48, 53, 56, 59, 61, 65, 70, 73, 74, 84, 86, 93, 94, 98]
+
+User 82 should buy discs [6, 7, 14, 18, 19, 22, 23, 30, 39, 43, 53, 56, 57, 60, 61, 71, 72, 74, 78, 86, 89, 92, 93, 94, 97, 98]
+
+User 83 should buy discs [4, 6, 7, 10, 14, 18, 19, 28, 37, 39, 40, 41, 43, 53, 54, 56, 60, 61, 70, 71, 72, 73, 74, 86, 92, 93, 94, 96, 97, 98]
+
+User 84 should buy discs [4, 6, 10, 14, 18, 19, 22, 28, 40, 43, 49, 53, 54, 56, 57, 59, 60, 61, 70, 73, 74, 84, 88, 89, 93, 96, 97, 98]
+
+User 85 should buy discs [6, 7, 10, 12, 14, 17, 18, 19, 28, 30, 39, 40, 43, 53, 56, 60, 71, 72, 73, 74, 86, 92, 93, 94, 95, 96, 97, 98]
+
+User 86 should buy discs [4, 6, 10, 14, 18, 22, 23, 25, 28, 39, 40, 43, 53, 56, 57, 59, 61, 68, 70, 71, 72, 73, 74, 93, 97, 98]
+
+User 87 should buy discs [4, 6, 7, 10, 14, 18, 19, 22, 23, 28, 39, 48, 53, 54, 56, 59, 61, 71, 72, 73, 74, 93, 94, 97, 98]
+
+User 88 should buy discs [4, 6, 7, 14, 18, 19, 22, 28, 39, 40, 43, 48, 53, 56, 59, 61, 70, 71, 72, 73, 78, 86, 93, 97, 98]
+
+User 89 should buy discs [6, 7, 10, 12, 14, 18, 30, 37, 48, 53, 54, 56, 59, 61, 65, 70, 72, 73, 74, 78, 84, 86, 93, 98]
+
+User 90 should buy discs [6, 7, 14, 18, 19, 22, 26, 28, 39, 40, 43, 54, 56, 59, 60, 61, 71, 73, 74, 78, 79, 86, 89, 93, 98]
+
+User 91 should buy discs [4, 6, 7, 14, 18, 33, 36, 39, 40, 41, 53, 56, 61, 65, 70, 71, 72, 73, 74, 86, 88, 93, 95, 97]
+
+User 92 should buy discs [4, 10, 14, 18, 19, 22, 23, 43, 48, 54, 56, 57, 59, 60, 61, 70, 72, 73, 74, 78, 79, 84, 86, 93, 94, 97, 98]
+
+User 93 should buy discs [7, 14, 18, 19, 23, 30, 39, 43, 53, 56, 57, 59, 61, 65, 70, 72, 73, 74, 79, 86, 92, 94, 95]
+
+User 94 should buy discs [4, 6, 10, 14, 17, 18, 22, 23, 26, 30, 39, 43, 48, 53, 54, 56, 57, 60, 61, 66, 70, 73, 74, 78, 84, 93, 97, 98]
+
+User 95 should buy discs [6, 10, 14, 18, 19, 22, 23, 30, 33, 37, 39, 40, 43, 48, 53, 56, 57, 60, 70, 71, 72, 74, 89, 93, 94, 97, 98]
+
+User 96 should buy discs [6, 7, 14, 18, 19, 22, 23, 37, 40, 43, 48, 53, 54, 56, 60, 61, 70, 73, 74, 78, 84, 86, 93, 94, 98]
+
+User 97 should buy discs [7, 10, 14, 18, 19, 22, 28, 37, 39, 40, 43, 53, 56, 58, 60, 61, 65, 70, 71, 72, 74, 78, 86, 89, 93, 94, 97]
+
+User 98 should buy discs [4, 6, 7, 14, 18, 22, 23, 28, 30, 39, 40, 43, 48, 53, 54, 56, 57, 60, 61, 64, 65, 70, 72, 73, 74, 86, 89, 93, 97, 98]
+
+User 99 should buy discs [4, 6, 10, 14, 18, 23, 30, 33, 37, 39, 40, 43, 53, 54, 56, 61, 65, 70, 72, 73, 74, 78, 79, 84, 86, 93, 97, 98]
+
+User 100 should buy discs [4, 6, 7, 14, 18, 19, 22, 30, 39, 43, 48, 53, 54, 56, 60, 61, 65, 71, 72, 73, 78, 86, 93, 95, 97, 98]
+
+In summary, my conclusions since I experimented with the application of the genetic algorithm, were that the results can vary drastically depending on the techniques or the sizes of variables such as population and generations.
+
+More specifically, initially a fairly simple version of the genetic algorithm was developed, with the basic necessary techniques to make it work. However, it was observed that the results had significant room for improvement.
+
+Analyzing the plots, it became apparent that in several cases, a fairly optimal solution was identified, before the last generation, where when it reached it, it ended up with a worse one. This is how the decision was made to apply the elitism technique. The purpose was to make sure that good solutions are preserved so that they are not lost from generation to generation.
+
+Since the code for elitism was also developed, the results improved rapidly. However, the number of elites is not more than 10% of the general population, so as to avoid the malfunction of finding solutions such as:
+
+Loss of diversity which completely opposes the philosophy of genetic algorithms, which try to explore different regions in the solution space
+Premature convergence or otherwise deadlock of the genetic algorithm to a suboptimal solution or failure to explore better solutions.
+Slower convergence, i.e. the fact that a possibly large amount of elitism can result in a limited number of the population undergoing genetic "operations" leading to a slowdown of the genetic algorithm and subsequently to the inability to find suitable solutions.
+Computational cost which may be caused by selecting and storing the best "individuals", which becomes particularly problematic if the population size is already large.
+It is important to strike a balance with the size of elitism. While retaining the best individuals can help preserve good solutions, too large an amount of elitism can have negative effects on diversity, exploration, convergence, and computational efficiency. The appropriate size of elitism depends on the specific problem and population dynamics. In our case it was found with a little experimentation in the suggested frameworks of 5-10% of the population.
+
+greater_counter = 0
+equal_counter = 0
+lesser_counter = 0
+
+for i in range(user_money_rates.shape[0]):
+    user_money = user_money_rates.iloc[i, 0]
+    user_rates = user_money_rates.iloc[i, 1:]
+
+    # Genetic algorithm.
+    best_individual, best_fitnesses = genetic_algorithm(100, len(album_price), album_price, user_rates, user_money, elitism_size=8)
+    ga_value = np.sum(best_individual * user_rates)
+    ga_cost = np.sum(best_individual * album_price)
+    ga_selected_discs = get_selected_discs(best_individual)
+
+    # Greedy selection.
+    greedy_individual = greedy_selection(len(album_price), album_price, user_rates, user_money)
+    greedy_value = np.sum(greedy_individual * user_rates)
+    greedy_cost = np.sum(greedy_individual * album_price)
+    greedy_selected_discs = get_selected_discs(greedy_individual)
+
+    print(f"User {i+1}:")
+    print(f"  GA: value = {ga_value}, cost = {ga_cost}, discs = {ga_selected_discs}")
+    print(f"  Greedy: value = {greedy_value}, cost = {greedy_cost}, discs = {greedy_selected_discs}")
+
+    if ga_value > greedy_value:
+        greater_counter += 1
+    elif ga_value == greedy_value:
+        equal_counter += 1
+    else:
+        lesser_counter += 1
+
+print("Comparison Counts:")
+print(f"GA value > Greedy value: {greater_counter} times")
+print(f"GA value = Greedy value: {equal_counter} times")
+print(f"GA value < Greedy value: {lesser_counter} times")
+     
+User 1:
+  GA: value = 97.0, cost = 229.0, discs = [6, 7, 10, 14, 18, 19, 22, 23, 28, 30, 39, 40, 43, 48, 53, 56, 57, 60, 61, 71, 73, 74, 79, 84, 93, 97, 98]
+  Greedy: value = 97.0, cost = 229.0, discs = [6, 7, 10, 14, 18, 19, 22, 23, 28, 30, 39, 40, 43, 48, 53, 56, 57, 60, 61, 71, 73, 74, 79, 84, 93, 97, 98]
+User 2:
+  GA: value = 104.0, cost = 238.0, discs = [4, 6, 7, 10, 14, 18, 19, 22, 23, 28, 30, 33, 39, 43, 53, 56, 60, 61, 70, 71, 72, 73, 74, 78, 79, 93, 97, 98]
+  Greedy: value = 105.0, cost = 239.0, discs = [4, 6, 7, 10, 14, 18, 19, 22, 23, 28, 30, 33, 39, 40, 43, 53, 56, 60, 61, 70, 72, 73, 74, 78, 79, 93, 97, 98]
+User 3:
+  GA: value = 101.0, cost = 244.0, discs = [4, 6, 7, 10, 14, 18, 22, 30, 33, 37, 39, 41, 43, 53, 54, 56, 57, 60, 70, 73, 74, 92, 93, 94, 97, 98]
+  Greedy: value = 102.0, cost = 241.0, discs = [4, 6, 7, 10, 14, 18, 19, 22, 30, 33, 37, 39, 43, 48, 53, 54, 56, 57, 60, 61, 70, 73, 74, 92, 93, 94, 97, 98]
+User 4:
+  GA: value = 110.0, cost = 294.0, discs = [4, 6, 7, 10, 14, 18, 19, 22, 23, 33, 37, 39, 40, 43, 48, 53, 54, 56, 57, 60, 61, 64, 65, 70, 71, 72, 73, 74, 93, 94, 97]
+  Greedy: value = 112.0, cost = 294.0, discs = [4, 6, 7, 10, 11, 14, 18, 19, 22, 33, 37, 39, 40, 43, 48, 53, 54, 56, 57, 60, 61, 65, 70, 71, 72, 73, 74, 86, 93, 94, 97, 98]
+User 5:
+  GA: value = 104.0, cost = 261.0, discs = [7, 10, 12, 14, 18, 19, 23, 26, 28, 33, 37, 39, 48, 53, 56, 60, 61, 65, 70, 71, 73, 74, 79, 86, 93, 97, 98]
+  Greedy: value = 105.0, cost = 261.0, discs = [6, 7, 10, 14, 18, 19, 23, 26, 28, 33, 37, 48, 53, 56, 60, 61, 65, 70, 71, 73, 74, 79, 86, 92, 93, 94, 98]
+User 6:
+  GA: value = 85.0, cost = 220.0, discs = [4, 6, 10, 14, 18, 19, 22, 23, 25, 39, 43, 53, 60, 61, 70, 71, 72, 74, 78, 84, 86, 94, 97, 98]
+  Greedy: value = 87.0, cost = 217.0, discs = [4, 6, 10, 14, 18, 19, 22, 23, 39, 43, 48, 53, 56, 57, 61, 70, 71, 72, 73, 74, 78, 84, 86, 93, 94, 97, 98]
+User 7:
+  GA: value = 113.0, cost = 291.0, discs = [6, 7, 10, 14, 18, 19, 22, 28, 30, 33, 36, 39, 43, 48, 53, 54, 56, 57, 60, 61, 65, 72, 73, 74, 86, 89, 93, 95, 97, 98]
+  Greedy: value = 112.0, cost = 291.0, discs = [6, 7, 10, 14, 18, 19, 22, 28, 30, 33, 36, 39, 43, 48, 53, 54, 56, 57, 60, 61, 65, 70, 71, 72, 73, 74, 86, 93, 95, 97, 98]
+User 8:
+  GA: value = 100.0, cost = 223.0, discs = [7, 10, 14, 18, 30, 39, 40, 43, 48, 53, 56, 57, 60, 61, 64, 70, 72, 73, 74, 78, 84, 93, 94, 97, 98]
+  Greedy: value = 102.0, cost = 222.0, discs = [7, 10, 14, 18, 22, 30, 39, 40, 43, 48, 53, 56, 57, 60, 61, 65, 70, 72, 73, 74, 78, 84, 93, 94, 97, 98]
+User 9:
+  GA: value = 111.0, cost = 289.0, discs = [6, 7, 10, 14, 18, 19, 23, 26, 28, 37, 40, 43, 48, 53, 54, 56, 57, 60, 61, 70, 73, 74, 78, 84, 86, 93, 94, 95, 97, 98]
+  Greedy: value = 111.0, cost = 287.0, discs = [6, 7, 10, 14, 18, 19, 26, 28, 33, 37, 39, 40, 43, 48, 53, 54, 56, 57, 61, 70, 73, 74, 78, 84, 86, 93, 94, 95, 97, 98]
+User 10:
+  GA: value = 104.0, cost = 265.0, discs = [6, 7, 10, 14, 18, 19, 28, 30, 33, 37, 39, 40, 43, 53, 54, 56, 57, 61, 70, 71, 72, 73, 74, 79, 84, 86, 93, 94, 98]
+  Greedy: value = 105.0, cost = 263.0, discs = [6, 7, 10, 14, 18, 19, 22, 30, 33, 39, 40, 43, 48, 53, 54, 56, 57, 60, 61, 70, 71, 72, 73, 74, 79, 84, 86, 93, 94]
+User 11:
+  GA: value = 86.0, cost = 206.0, discs = [4, 10, 14, 18, 19, 22, 30, 39, 43, 48, 53, 54, 56, 57, 61, 65, 70, 88, 93, 96, 97, 98]
+  Greedy: value = 88.0, cost = 200.0, discs = [4, 6, 10, 14, 18, 19, 22, 23, 30, 39, 43, 48, 53, 54, 56, 57, 59, 61, 65, 70, 73, 74, 93, 97, 98]
+User 12:
+  GA: value = 109.0, cost = 295.0, discs = [5, 6, 10, 14, 18, 19, 22, 23, 28, 33, 37, 39, 40, 45, 53, 54, 56, 61, 70, 71, 72, 73, 74, 79, 86, 92, 93, 97, 98]
+  Greedy: value = 112.0, cost = 294.0, discs = [6, 10, 14, 17, 18, 19, 22, 23, 28, 33, 37, 39, 40, 43, 53, 54, 56, 60, 61, 70, 71, 72, 73, 74, 78, 79, 86, 92, 93, 97, 98]
+User 13:
+  GA: value = 112.0, cost = 260.0, discs = [4, 6, 14, 18, 19, 23, 28, 30, 37, 39, 40, 48, 53, 54, 56, 57, 60, 61, 65, 73, 74, 84, 86, 89, 93, 94, 97, 98]
+  Greedy: value = 113.0, cost = 260.0, discs = [6, 7, 10, 14, 18, 19, 23, 28, 30, 37, 39, 40, 48, 53, 54, 56, 57, 60, 61, 65, 71, 73, 74, 84, 86, 93, 94, 97, 98]
+User 14:
+  GA: value = 99.0, cost = 229.0, discs = [4, 6, 10, 14, 18, 19, 23, 26, 28, 40, 48, 53, 56, 60, 61, 71, 72, 73, 74, 78, 86, 92, 93, 94, 97, 98]
+  Greedy: value = 99.0, cost = 227.0, discs = [6, 7, 10, 14, 18, 19, 23, 28, 39, 40, 48, 53, 56, 60, 61, 70, 71, 72, 73, 74, 78, 86, 92, 93, 94, 97, 98]
+User 15:
+  GA: value = 92.0, cost = 200.0, discs = [4, 7, 14, 18, 19, 28, 39, 40, 43, 48, 53, 56, 59, 60, 61, 70, 72, 73, 74, 84, 93, 95, 98]
+  Greedy: value = 93.0, cost = 204.0, discs = [6, 7, 14, 18, 19, 28, 39, 40, 43, 48, 53, 56, 59, 60, 61, 70, 72, 73, 74, 84, 86, 93, 95, 98]
+User 16:
+  GA: value = 111.0, cost = 267.0, discs = [4, 6, 7, 14, 18, 22, 23, 26, 30, 39, 40, 43, 48, 53, 56, 60, 61, 68, 71, 72, 73, 74, 78, 79, 86, 94, 98]
+  Greedy: value = 114.0, cost = 267.0, discs = [4, 6, 7, 10, 14, 18, 19, 22, 23, 30, 39, 40, 43, 48, 53, 56, 57, 60, 61, 70, 71, 72, 73, 74, 78, 79, 86, 93, 94, 97, 98]
+User 17:
+  GA: value = 97.0, cost = 259.0, discs = [5, 10, 14, 18, 30, 39, 43, 48, 53, 56, 61, 70, 72, 73, 74, 79, 86, 88, 89, 92, 93, 95, 96, 98]
+  Greedy: value = 98.0, cost = 256.0, discs = [6, 10, 14, 18, 30, 39, 43, 48, 53, 56, 61, 70, 72, 73, 74, 79, 86, 88, 89, 92, 93, 94, 95, 96, 97, 98]
+User 18:
+  GA: value = 95.0, cost = 201.0, discs = [6, 10, 14, 18, 22, 23, 33, 39, 43, 53, 54, 56, 57, 59, 61, 65, 70, 71, 73, 74, 92, 93, 97, 98]
+  Greedy: value = 94.0, cost = 200.0, discs = [6, 10, 14, 18, 19, 22, 23, 33, 39, 43, 53, 54, 56, 57, 61, 65, 70, 71, 73, 74, 86, 92, 93, 97, 98]
+User 19:
+  GA: value = 112.0, cost = 296.0, discs = [6, 10, 14, 18, 19, 22, 23, 30, 33, 39, 40, 41, 43, 53, 54, 56, 57, 59, 60, 61, 70, 72, 73, 74, 84, 86, 89, 93, 94, 97, 98]
+  Greedy: value = 113.0, cost = 297.0, discs = [10, 14, 17, 18, 19, 22, 23, 30, 33, 40, 43, 48, 53, 54, 56, 57, 59, 60, 61, 70, 72, 73, 74, 84, 86, 89, 93, 94, 97, 98]
+User 20:
+  GA: value = 107.0, cost = 258.0, discs = [4, 6, 10, 14, 18, 19, 28, 30, 39, 40, 43, 53, 54, 56, 57, 60, 61, 68, 71, 72, 73, 74, 84, 89, 93, 94, 97, 98]
+  Greedy: value = 106.0, cost = 250.0, discs = [4, 6, 10, 14, 18, 19, 28, 30, 39, 40, 43, 53, 54, 56, 60, 61, 65, 71, 72, 73, 74, 79, 84, 89, 93, 94, 97, 98]
+User 21:
+  GA: value = 99.0, cost = 264.0, discs = [6, 14, 18, 19, 22, 28, 30, 33, 37, 40, 43, 48, 53, 54, 56, 57, 60, 61, 71, 72, 73, 74, 86, 89, 92, 93, 94]
+  Greedy: value = 100.0, cost = 263.0, discs = [6, 7, 10, 14, 18, 19, 22, 28, 30, 33, 37, 40, 43, 48, 53, 54, 56, 60, 61, 71, 73, 74, 86, 89, 92, 93, 94]
+User 22:
+  GA: value = 105.0, cost = 270.0, discs = [6, 7, 10, 14, 18, 23, 26, 33, 37, 39, 48, 53, 54, 56, 57, 59, 61, 71, 72, 73, 78, 84, 93, 94, 95, 97, 98]
+  Greedy: value = 106.0, cost = 270.0, discs = [6, 7, 10, 14, 18, 19, 23, 26, 33, 37, 43, 48, 53, 54, 56, 57, 59, 61, 71, 72, 73, 74, 78, 84, 93, 95, 97, 98]
+User 23:
+  GA: value = 97.0, cost = 241.0, discs = [4, 6, 7, 10, 14, 18, 22, 30, 37, 39, 40, 48, 53, 54, 56, 57, 60, 61, 70, 71, 73, 74, 78, 86, 93, 94, 97, 98]
+  Greedy: value = 99.0, cost = 244.0, discs = [6, 7, 10, 14, 18, 22, 28, 30, 37, 39, 40, 43, 48, 53, 54, 56, 57, 60, 61, 70, 71, 73, 74, 78, 93, 94, 97, 98]
+User 24:
+  GA: value = 97.0, cost = 242.0, discs = [6, 10, 14, 18, 19, 22, 28, 30, 39, 40, 48, 53, 54, 56, 60, 61, 64, 70, 72, 73, 74, 84, 93, 96, 97, 98]
+  Greedy: value = 98.0, cost = 242.0, discs = [6, 10, 14, 18, 19, 22, 23, 28, 30, 39, 40, 48, 53, 54, 56, 60, 61, 70, 72, 73, 74, 79, 84, 88, 93, 97, 98]
+User 25:
+  GA: value = 114.0, cost = 294.0, discs = [6, 7, 10, 14, 18, 22, 23, 33, 37, 39, 40, 43, 48, 53, 56, 57, 60, 61, 65, 72, 73, 74, 78, 84, 89, 92, 93, 96, 98]
+  Greedy: value = 114.0, cost = 294.0, discs = [6, 7, 10, 14, 18, 22, 23, 33, 37, 39, 40, 43, 48, 53, 54, 56, 57, 60, 61, 65, 72, 73, 74, 78, 84, 92, 93, 96, 97, 98]
+User 26:
+  GA: value = 94.0, cost = 216.0, discs = [4, 10, 14, 17, 18, 23, 33, 37, 39, 40, 43, 48, 53, 56, 57, 60, 61, 70, 71, 73, 74, 89, 93, 97]
+  Greedy: value = 95.0, cost = 215.0, discs = [4, 10, 14, 18, 23, 33, 37, 39, 40, 43, 48, 53, 54, 56, 57, 60, 61, 70, 71, 73, 74, 84, 86, 93, 97]
+User 27:
+  GA: value = 96.0, cost = 272.0, discs = [4, 6, 7, 11, 14, 18, 19, 23, 26, 28, 37, 39, 40, 41, 43, 53, 60, 61, 70, 72, 73, 74, 78, 79, 93, 97, 98]
+  Greedy: value = 97.0, cost = 269.0, discs = [4, 6, 7, 10, 14, 18, 19, 23, 26, 28, 37, 39, 40, 41, 43, 53, 56, 57, 60, 61, 70, 72, 73, 74, 78, 79, 93, 97, 98]
+User 28:
+  GA: value = 110.0, cost = 262.0, discs = [4, 6, 7, 10, 14, 18, 22, 36, 43, 53, 56, 59, 60, 65, 70, 71, 72, 73, 74, 78, 88, 92, 93, 94, 97, 98]
+  Greedy: value = 110.0, cost = 257.0, discs = [4, 6, 7, 10, 14, 18, 22, 39, 43, 48, 53, 56, 59, 60, 61, 65, 70, 71, 72, 73, 74, 78, 88, 92, 93, 94, 97, 98]
+User 29:
+  GA: value = 111.0, cost = 254.0, discs = [4, 6, 14, 18, 22, 23, 28, 33, 39, 40, 43, 53, 56, 57, 59, 60, 61, 65, 71, 72, 73, 74, 79, 86, 93, 94, 97, 98]
+  Greedy: value = 112.0, cost = 255.0, discs = [4, 6, 10, 14, 18, 19, 22, 23, 28, 33, 37, 39, 40, 43, 53, 56, 57, 60, 61, 65, 71, 73, 74, 79, 86, 93, 94, 97, 98]
+User 30:
+  GA: value = 99.0, cost = 264.0, discs = [6, 7, 10, 14, 18, 19, 22, 30, 37, 39, 40, 53, 56, 57, 60, 61, 65, 70, 71, 72, 73, 74, 79, 88, 89, 93, 94, 97]
+  Greedy: value = 100.0, cost = 262.0, discs = [6, 7, 10, 14, 18, 19, 22, 23, 30, 37, 39, 40, 41, 53, 56, 57, 60, 61, 65, 70, 71, 72, 73, 74, 79, 93, 94, 97, 98]
+User 31:
+  GA: value = 101.0, cost = 240.0, discs = [4, 6, 10, 14, 18, 19, 23, 25, 30, 37, 43, 48, 56, 57, 61, 68, 70, 72, 73, 74, 78, 93, 94, 97, 98]
+  Greedy: value = 103.0, cost = 240.0, discs = [4, 6, 10, 14, 18, 19, 23, 30, 37, 39, 43, 48, 53, 56, 57, 59, 61, 70, 72, 73, 74, 78, 84, 86, 93, 94, 97, 98]
+User 32:
+  GA: value = 92.0, cost = 215.0, discs = [4, 10, 14, 18, 19, 22, 23, 30, 33, 39, 43, 53, 54, 56, 57, 59, 61, 71, 72, 73, 74, 89, 93, 97, 98]
+  Greedy: value = 92.0, cost = 212.0, discs = [4, 6, 10, 14, 18, 19, 22, 23, 30, 33, 39, 53, 54, 56, 57, 59, 61, 71, 72, 73, 74, 89, 93, 97, 98]
+User 33:
+  GA: value = 81.0, cost = 250.0, discs = [5, 6, 10, 14, 18, 19, 28, 40, 43, 48, 49, 53, 56, 57, 60, 61, 70, 71, 72, 73, 74, 78, 88, 93, 97]
+  Greedy: value = 82.0, cost = 247.0, discs = [6, 10, 14, 18, 19, 25, 28, 39, 40, 43, 48, 53, 56, 57, 60, 61, 70, 71, 72, 73, 74, 78, 88, 92, 93, 97, 98]
+User 34:
+  GA: value = 84.0, cost = 213.0, discs = [4, 7, 14, 18, 19, 22, 23, 28, 37, 39, 43, 53, 54, 56, 61, 65, 70, 71, 72, 74, 86, 93, 94, 98]
+  Greedy: value = 85.0, cost = 213.0, discs = [4, 7, 10, 14, 18, 19, 22, 23, 28, 30, 37, 39, 43, 53, 54, 56, 61, 65, 70, 71, 73, 74, 86, 93, 98]
+User 35:
+  GA: value = 94.0, cost = 240.0, discs = [4, 6, 7, 10, 14, 18, 36, 39, 40, 48, 53, 56, 60, 61, 65, 70, 72, 73, 78, 84, 89, 93, 95, 97, 98]
+  Greedy: value = 95.0, cost = 240.0, discs = [4, 6, 7, 10, 14, 18, 33, 36, 39, 40, 48, 53, 56, 60, 61, 65, 70, 72, 73, 74, 78, 84, 89, 93, 97, 98]
+User 36:
+  GA: value = 94.0, cost = 296.0, discs = [3, 4, 6, 7, 10, 14, 17, 18, 19, 30, 37, 39, 41, 43, 56, 59, 60, 61, 65, 70, 71, 73, 74, 79, 88, 93, 98]
+  Greedy: value = 96.0, cost = 297.0, discs = [4, 6, 7, 14, 17, 18, 19, 30, 37, 39, 40, 43, 45, 53, 54, 56, 59, 60, 61, 65, 70, 71, 73, 74, 79, 88, 93, 97, 98]
+User 37:
+  GA: value = 93.0, cost = 278.0, discs = [6, 10, 14, 17, 18, 23, 25, 28, 37, 39, 40, 41, 53, 54, 56, 61, 65, 72, 73, 74, 86, 92, 93, 96, 97, 98]
+  Greedy: value = 94.0, cost = 277.0, discs = [6, 10, 11, 14, 17, 18, 23, 37, 39, 40, 41, 43, 53, 54, 56, 61, 65, 70, 72, 73, 74, 86, 92, 93, 96, 97, 98]
+User 38:
+  GA: value = 104.0, cost = 226.0, discs = [4, 6, 10, 14, 18, 23, 36, 37, 39, 43, 48, 53, 56, 61, 65, 70, 71, 72, 73, 74, 78, 79, 86, 93, 97, 98]
+  Greedy: value = 105.0, cost = 222.0, discs = [4, 6, 10, 14, 18, 19, 22, 23, 33, 39, 43, 48, 53, 56, 61, 65, 70, 71, 72, 73, 74, 78, 79, 86, 93, 97, 98]
+User 39:
+  GA: value = 94.0, cost = 223.0, discs = [4, 6, 7, 10, 14, 18, 19, 23, 33, 39, 40, 43, 53, 54, 56, 57, 60, 61, 70, 71, 73, 74, 92, 93, 94, 97, 98]
+  Greedy: value = 94.0, cost = 223.0, discs = [4, 6, 7, 10, 14, 18, 19, 23, 33, 39, 40, 43, 53, 54, 56, 57, 60, 61, 70, 71, 73, 74, 92, 93, 94, 97, 98]
+User 40:
+  GA: value = 95.0, cost = 242.0, discs = [14, 18, 19, 26, 28, 30, 33, 36, 37, 39, 43, 53, 54, 56, 57, 60, 71, 72, 73, 74, 84, 86, 93, 97, 98]
+  Greedy: value = 96.0, cost = 236.0, discs = [4, 6, 14, 18, 19, 26, 28, 30, 33, 37, 39, 43, 53, 54, 56, 57, 60, 61, 71, 72, 73, 74, 84, 86, 93, 97, 98]
+User 41:
+  GA: value = 107.0, cost = 294.0, discs = [4, 6, 10, 12, 14, 17, 18, 19, 22, 23, 33, 37, 43, 53, 56, 57, 60, 61, 65, 68, 70, 71, 72, 73, 74, 86, 93, 94, 98]
+  Greedy: value = 107.0, cost = 290.0, discs = [4, 5, 6, 10, 12, 14, 18, 19, 23, 33, 37, 39, 43, 53, 56, 57, 60, 61, 65, 70, 71, 72, 73, 74, 86, 89, 93, 94, 97, 98]
+User 42:
+  GA: value = 100.0, cost = 270.0, discs = [6, 10, 14, 18, 19, 23, 26, 30, 36, 37, 39, 40, 43, 54, 56, 61, 70, 73, 74, 78, 80, 84, 86, 93, 94, 97, 98]
+  Greedy: value = 100.0, cost = 262.0, discs = [6, 10, 14, 17, 18, 19, 23, 30, 37, 39, 40, 43, 53, 54, 56, 61, 64, 70, 72, 73, 74, 78, 84, 86, 93, 94, 97, 98]
+User 43:
+  GA: value = 112.0, cost = 282.0, discs = [4, 6, 7, 10, 14, 18, 19, 23, 30, 39, 40, 48, 53, 54, 56, 57, 61, 65, 70, 71, 72, 73, 74, 78, 80, 86, 92, 93, 97, 98]
+  Greedy: value = 113.0, cost = 278.0, discs = [4, 6, 7, 10, 14, 18, 19, 23, 30, 39, 40, 43, 48, 53, 54, 56, 57, 61, 70, 71, 72, 73, 74, 78, 79, 86, 92, 93, 94, 97, 98]
+User 44:
+  GA: value = 108.0, cost = 239.0, discs = [4, 6, 7, 10, 14, 17, 18, 19, 23, 28, 39, 40, 43, 48, 53, 54, 56, 57, 61, 73, 74, 84, 86, 93, 94, 97, 98]
+  Greedy: value = 111.0, cost = 242.0, discs = [4, 6, 7, 10, 14, 18, 19, 23, 30, 39, 40, 43, 48, 53, 54, 56, 57, 60, 61, 70, 71, 73, 74, 84, 86, 93, 94, 97, 98]
+User 45:
+  GA: value = 96.0, cost = 216.0, discs = [4, 6, 10, 14, 18, 19, 33, 39, 41, 43, 53, 56, 57, 59, 61, 71, 73, 74, 78, 80, 86, 93, 97, 98]
+  Greedy: value = 98.0, cost = 218.0, discs = [4, 6, 10, 14, 18, 19, 22, 23, 33, 39, 43, 53, 56, 57, 59, 61, 71, 72, 73, 74, 78, 86, 93, 95, 97, 98]
+User 46:
+  GA: value = 93.0, cost = 257.0, discs = [4, 6, 10, 14, 18, 19, 22, 30, 37, 39, 48, 53, 56, 57, 60, 61, 68, 70, 72, 73, 74, 78, 80, 92, 93, 97, 98]
+  Greedy: value = 95.0, cost = 251.0, discs = [4, 6, 10, 14, 18, 19, 22, 30, 37, 39, 48, 53, 56, 57, 59, 61, 70, 71, 72, 73, 74, 78, 84, 92, 93, 94, 97, 98]
+User 47:
+  GA: value = 88.0, cost = 209.0, discs = [7, 12, 14, 18, 19, 30, 39, 40, 43, 53, 56, 60, 61, 65, 71, 72, 73, 74, 86, 89, 93, 94, 97, 98]
+  Greedy: value = 89.0, cost = 210.0, discs = [6, 7, 14, 17, 18, 19, 30, 39, 40, 43, 53, 56, 60, 61, 65, 71, 72, 73, 74, 86, 89, 93, 94, 97, 98]
+User 48:
+  GA: value = 95.0, cost = 292.0, discs = [6, 12, 14, 18, 22, 23, 30, 32, 37, 39, 41, 43, 48, 53, 56, 59, 60, 61, 70, 71, 73, 74, 79, 84, 93, 97, 98]
+  Greedy: value = 97.0, cost = 291.0, discs = [6, 12, 14, 18, 22, 23, 30, 37, 39, 41, 43, 48, 53, 56, 60, 61, 68, 70, 71, 73, 74, 79, 80, 84, 93, 97, 98]
+User 49:
+  GA: value = 111.0, cost = 245.0, discs = [6, 7, 14, 18, 19, 22, 23, 26, 30, 33, 39, 40, 43, 48, 53, 56, 57, 60, 61, 65, 71, 73, 74, 78, 84, 93, 98]
+  Greedy: value = 112.0, cost = 245.0, discs = [6, 7, 14, 18, 19, 22, 23, 30, 33, 39, 40, 43, 48, 53, 56, 57, 60, 61, 65, 70, 71, 73, 74, 78, 84, 93, 94]
+User 50:
+  GA: value = 87.0, cost = 216.0, discs = [6, 7, 14, 18, 19, 22, 23, 33, 39, 41, 48, 53, 56, 60, 61, 65, 70, 78, 86, 92, 93, 97, 98]
+  Greedy: value = 89.0, cost = 215.0, discs = [4, 6, 7, 10, 14, 18, 19, 22, 23, 33, 39, 48, 53, 56, 60, 61, 65, 71, 73, 78, 86, 92, 93, 97, 98]
+User 51:
+  GA: value = 112.0, cost = 289.0, discs = [6, 10, 11, 14, 18, 19, 26, 30, 33, 36, 39, 43, 48, 53, 56, 60, 61, 65, 70, 71, 72, 73, 74, 79, 86, 92, 93, 94, 97]
+  Greedy: value = 112.0, cost = 291.0, discs = [4, 6, 10, 14, 18, 19, 26, 30, 33, 39, 40, 43, 48, 53, 56, 60, 61, 65, 70, 71, 72, 73, 74, 79, 86, 88, 92, 93, 94, 97, 98]
+User 52:
+  GA: value = 101.0, cost = 258.0, discs = [4, 7, 10, 14, 18, 19, 22, 23, 26, 37, 39, 53, 56, 57, 60, 61, 65, 70, 72, 73, 74, 79, 86, 93, 94, 95, 97, 98]
+  Greedy: value = 101.0, cost = 250.0, discs = [4, 6, 7, 10, 14, 18, 19, 22, 23, 26, 37, 39, 43, 53, 56, 57, 61, 65, 70, 73, 74, 79, 86, 92, 93, 94, 97, 98]
+User 53:
+  GA: value = 96.0, cost = 275.0, discs = [4, 7, 10, 11, 14, 17, 18, 22, 26, 30, 33, 39, 48, 53, 56, 60, 61, 65, 70, 72, 73, 74, 79, 92, 93, 97, 98]
+  Greedy: value = 98.0, cost = 274.0, discs = [6, 7, 10, 11, 14, 17, 18, 22, 26, 30, 33, 39, 40, 48, 53, 56, 57, 60, 61, 65, 70, 72, 73, 74, 79, 93, 97, 98]
+User 54:
+  GA: value = 86.0, cost = 208.0, discs = [6, 10, 12, 14, 18, 19, 22, 30, 33, 48, 53, 56, 59, 60, 61, 70, 72, 73, 78, 93, 94, 97, 98]
+  Greedy: value = 87.0, cost = 207.0, discs = [6, 7, 10, 14, 18, 19, 22, 30, 33, 43, 48, 53, 56, 59, 60, 61, 70, 72, 73, 74, 78, 93, 94, 97, 98]
+User 55:
+  GA: value = 96.0, cost = 257.0, discs = [4, 6, 14, 17, 18, 19, 28, 30, 33, 36, 39, 40, 53, 54, 56, 60, 61, 70, 71, 72, 73, 74, 78, 79, 93, 97, 98]
+  Greedy: value = 96.0, cost = 256.0, discs = [4, 6, 14, 17, 18, 19, 23, 28, 30, 33, 39, 40, 53, 54, 56, 60, 61, 70, 71, 72, 73, 74, 78, 79, 86, 93, 97, 98]
+User 56:
+  GA: value = 93.0, cost = 205.0, discs = [4, 6, 14, 18, 19, 22, 23, 28, 33, 39, 40, 43, 48, 53, 54, 56, 60, 70, 71, 73, 74, 93, 94, 98]
+  Greedy: value = 94.0, cost = 204.0, discs = [4, 6, 10, 14, 18, 19, 22, 23, 28, 33, 39, 40, 43, 48, 53, 54, 56, 60, 61, 70, 73, 74, 93, 94, 98]
+User 57:
+  GA: value = 105.0, cost = 279.0, discs = [6, 7, 10, 14, 18, 19, 22, 25, 28, 39, 40, 43, 53, 54, 56, 57, 61, 65, 70, 71, 72, 73, 74, 84, 89, 92, 93, 97, 98]
+  Greedy: value = 105.0, cost = 271.0, discs = [6, 7, 10, 14, 18, 19, 22, 28, 39, 40, 43, 53, 56, 57, 61, 65, 70, 71, 72, 73, 74, 78, 79, 84, 89, 92, 93, 97, 98]
+User 58:
+  GA: value = 112.0, cost = 288.0, discs = [6, 7, 10, 11, 14, 18, 19, 22, 28, 37, 39, 40, 53, 54, 56, 57, 60, 61, 72, 73, 74, 84, 88, 92, 93, 96, 97, 98]
+  Greedy: value = 112.0, cost = 286.0, discs = [4, 6, 7, 10, 14, 18, 19, 22, 26, 28, 39, 40, 53, 54, 56, 57, 59, 60, 61, 65, 72, 73, 74, 84, 88, 92, 93, 97, 98]
+User 59:
+  GA: value = 112.0, cost = 280.0, discs = [6, 10, 14, 18, 19, 23, 26, 28, 30, 33, 37, 39, 40, 43, 53, 56, 57, 59, 60, 61, 70, 72, 73, 74, 78, 79, 86, 93, 94]
+  Greedy: value = 112.0, cost = 275.0, discs = [6, 10, 14, 18, 19, 23, 26, 28, 30, 37, 39, 40, 43, 53, 56, 57, 59, 60, 61, 70, 72, 73, 74, 78, 79, 86, 93, 94, 97, 98]
+User 60:
+  GA: value = 96.0, cost = 206.0, discs = [4, 6, 7, 14, 18, 19, 22, 23, 30, 37, 40, 43, 56, 60, 61, 70, 71, 72, 73, 74, 86, 93, 94, 97, 98]
+  Greedy: value = 99.0, cost = 207.0, discs = [4, 6, 7, 10, 14, 18, 19, 22, 23, 30, 39, 40, 43, 53, 56, 60, 61, 70, 71, 72, 73, 74, 86, 93, 94, 97, 98]
+User 61:
+  GA: value = 108.0, cost = 294.0, discs = [4, 14, 15, 18, 19, 22, 23, 30, 33, 37, 39, 43, 53, 54, 56, 57, 61, 64, 70, 72, 73, 74, 89, 92, 93, 94, 97, 98]
+  Greedy: value = 108.0, cost = 289.0, discs = [4, 6, 14, 18, 19, 22, 23, 30, 33, 37, 39, 43, 53, 54, 56, 57, 61, 64, 65, 70, 71, 72, 73, 74, 89, 92, 93, 94, 98]
+User 62:
+  GA: value = 107.0, cost = 262.0, discs = [4, 6, 7, 10, 14, 18, 19, 22, 28, 36, 39, 40, 43, 53, 56, 57, 59, 60, 61, 65, 70, 72, 73, 74, 78, 86, 93, 97, 98]
+  Greedy: value = 108.0, cost = 261.0, discs = [4, 6, 7, 10, 14, 18, 19, 22, 28, 39, 40, 43, 48, 53, 56, 57, 59, 60, 61, 65, 72, 73, 74, 78, 86, 89, 93, 97, 98]
+User 63:
+  GA: value = 87.0, cost = 230.0, discs = [6, 7, 14, 18, 19, 23, 30, 37, 39, 40, 43, 48, 53, 56, 57, 59, 61, 70, 72, 73, 74, 78, 93, 96, 97, 98]
+  Greedy: value = 89.0, cost = 230.0, discs = [6, 7, 10, 14, 18, 19, 23, 30, 37, 39, 40, 43, 48, 53, 56, 57, 61, 70, 72, 73, 74, 78, 84, 93, 95, 97, 98]
+User 64:
+  GA: value = 96.0, cost = 251.0, discs = [6, 7, 14, 18, 19, 22, 26, 28, 30, 39, 40, 43, 53, 54, 56, 60, 65, 71, 73, 74, 78, 79, 84, 94, 97]
+  Greedy: value = 97.0, cost = 248.0, discs = [6, 7, 14, 17, 18, 19, 22, 28, 30, 39, 40, 43, 53, 54, 56, 60, 61, 65, 71, 73, 74, 78, 79, 93, 94, 97, 98]
+User 65:
+  GA: value = 108.0, cost = 263.0, discs = [4, 5, 6, 14, 18, 19, 22, 23, 26, 39, 40, 43, 48, 53, 54, 56, 59, 60, 61, 65, 70, 73, 74, 84, 86, 93, 97, 98]
+  Greedy: value = 110.0, cost = 256.0, discs = [4, 6, 14, 18, 19, 23, 26, 37, 39, 40, 43, 48, 53, 54, 56, 57, 60, 61, 65, 70, 71, 73, 74, 84, 86, 93, 94, 97, 98]
+User 66:
+  GA: value = 89.0, cost = 225.0, discs = [4, 7, 10, 14, 18, 19, 23, 25, 30, 37, 39, 43, 53, 54, 56, 57, 61, 73, 74, 86, 92, 93, 94, 97, 98]
+  Greedy: value = 90.0, cost = 224.0, discs = [4, 6, 7, 10, 14, 18, 19, 23, 30, 37, 39, 43, 53, 54, 56, 57, 61, 72, 73, 74, 78, 86, 92, 93, 94, 97]
+User 67:
+  GA: value = 95.0, cost = 201.0, discs = [6, 10, 14, 18, 22, 23, 26, 30, 39, 43, 53, 56, 57, 60, 61, 70, 71, 74, 86, 93, 94, 95, 97, 98]
+  Greedy: value = 96.0, cost = 200.0, discs = [4, 6, 10, 14, 18, 19, 22, 23, 30, 39, 43, 53, 56, 57, 60, 61, 70, 71, 73, 74, 78, 86, 93, 94, 97, 98]
+User 68:
+  GA: value = 100.0, cost = 205.0, discs = [4, 6, 7, 10, 14, 18, 23, 33, 39, 40, 43, 53, 56, 60, 61, 65, 70, 72, 73, 74, 84, 92, 93, 97, 98]
+  Greedy: value = 100.0, cost = 203.0, discs = [4, 6, 7, 10, 14, 18, 19, 23, 33, 39, 43, 53, 56, 60, 61, 65, 70, 71, 72, 73, 74, 84, 86, 93, 97, 98]
+User 69:
+  GA: value = 90.0, cost = 220.0, discs = [6, 7, 10, 14, 18, 23, 30, 33, 39, 41, 43, 53, 54, 56, 60, 61, 65, 70, 71, 72, 73, 74, 86, 93, 97, 98]
+  Greedy: value = 91.0, cost = 218.0, discs = [6, 7, 10, 14, 18, 23, 30, 33, 39, 40, 43, 48, 53, 56, 57, 60, 61, 65, 70, 71, 72, 73, 74, 86, 93, 97, 98]
+User 70:
+  GA: value = 99.0, cost = 261.0, discs = [4, 6, 14, 18, 22, 23, 30, 39, 40, 41, 43, 48, 53, 54, 56, 61, 70, 73, 74, 79, 84, 86, 89, 92, 93, 97, 98]
+  Greedy: value = 100.0, cost = 258.0, discs = [4, 6, 10, 14, 18, 22, 23, 30, 39, 40, 43, 48, 53, 54, 56, 61, 70, 73, 74, 79, 84, 86, 89, 92, 93, 94, 97, 98]
+User 71:
+  GA: value = 90.0, cost = 204.0, discs = [6, 7, 10, 14, 18, 19, 22, 40, 43, 56, 59, 61, 65, 72, 73, 74, 78, 79, 84, 93, 94, 97, 98]
+  Greedy: value = 91.0, cost = 198.0, discs = [6, 7, 10, 14, 18, 19, 22, 30, 39, 40, 43, 53, 56, 61, 65, 70, 72, 73, 74, 78, 84, 93, 94, 97, 98]
+User 72:
+  GA: value = 88.0, cost = 261.0, discs = [6, 7, 10, 14, 18, 22, 25, 26, 39, 40, 43, 48, 53, 56, 57, 60, 61, 66, 73, 74, 86, 89, 92, 93, 97, 98]
+  Greedy: value = 88.0, cost = 259.0, discs = [4, 6, 7, 10, 14, 18, 19, 25, 26, 39, 40, 43, 48, 53, 56, 57, 60, 61, 73, 74, 86, 88, 89, 92, 93, 97, 98]
+User 73:
+  GA: value = 99.0, cost = 231.0, discs = [6, 7, 14, 18, 22, 23, 28, 33, 37, 39, 40, 43, 53, 56, 57, 59, 60, 61, 70, 71, 72, 73, 74, 92, 93]
+  Greedy: value = 99.0, cost = 229.0, discs = [6, 7, 14, 18, 23, 28, 33, 37, 39, 43, 53, 54, 56, 57, 59, 60, 61, 70, 71, 72, 73, 74, 78, 86, 93]
+User 74:
+  GA: value = 103.0, cost = 251.0, discs = [6, 7, 10, 11, 14, 18, 22, 23, 26, 30, 39, 40, 43, 48, 53, 56, 59, 60, 61, 70, 73, 74, 79, 93, 94, 97, 98]
+  Greedy: value = 105.0, cost = 249.0, discs = [4, 6, 7, 10, 14, 18, 19, 22, 23, 26, 30, 39, 40, 43, 48, 53, 56, 59, 60, 61, 73, 74, 79, 93, 94, 95, 97]
+User 75:
+  GA: value = 108.0, cost = 227.0, discs = [4, 6, 14, 18, 19, 22, 26, 39, 40, 43, 53, 54, 56, 57, 61, 71, 72, 73, 74, 78, 79, 86, 89, 93, 97, 98]
+  Greedy: value = 111.0, cost = 227.0, discs = [4, 6, 10, 14, 18, 19, 22, 30, 39, 40, 43, 53, 54, 56, 57, 61, 70, 71, 72, 73, 74, 78, 79, 86, 93, 94, 97]
+User 76:
+  GA: value = 106.0, cost = 295.0, discs = [4, 6, 10, 14, 18, 19, 23, 26, 30, 33, 37, 39, 40, 43, 48, 53, 54, 56, 57, 60, 61, 65, 71, 72, 73, 74, 78, 84, 86, 93, 97, 98]
+  Greedy: value = 106.0, cost = 295.0, discs = [4, 6, 10, 14, 18, 19, 23, 26, 30, 33, 37, 39, 40, 43, 48, 53, 54, 56, 57, 60, 61, 65, 71, 72, 73, 74, 78, 84, 86, 93, 97, 98]
+User 77:
+  GA: value = 107.0, cost = 269.0, discs = [6, 10, 12, 14, 18, 19, 30, 37, 39, 43, 48, 53, 54, 56, 60, 61, 65, 70, 71, 72, 73, 74, 84, 86, 88, 93, 94, 97, 98]
+  Greedy: value = 109.0, cost = 268.0, discs = [6, 10, 14, 18, 19, 30, 37, 39, 43, 48, 53, 54, 56, 57, 60, 61, 65, 70, 71, 72, 73, 74, 78, 84, 86, 89, 93, 94, 97, 98]
+User 78:
+  GA: value = 95.0, cost = 250.0, discs = [7, 10, 14, 17, 18, 23, 28, 30, 33, 36, 39, 43, 48, 53, 56, 61, 65, 70, 72, 73, 74, 84, 86, 93, 97, 98]
+  Greedy: value = 96.0, cost = 251.0, discs = [6, 7, 10, 14, 17, 18, 22, 23, 28, 30, 33, 39, 43, 48, 53, 56, 59, 61, 65, 70, 72, 73, 74, 84, 93, 97, 98]
+User 79:
+  GA: value = 90.0, cost = 235.0, discs = [4, 6, 10, 14, 18, 19, 22, 28, 33, 39, 40, 43, 53, 56, 61, 71, 72, 73, 74, 78, 79, 86, 93, 94, 95, 97, 98]
+  Greedy: value = 91.0, cost = 230.0, discs = [6, 10, 14, 18, 19, 22, 23, 28, 33, 39, 40, 43, 53, 56, 57, 61, 71, 72, 73, 74, 79, 84, 86, 93, 94, 97, 98]
+User 80:
+  GA: value = 110.0, cost = 296.0, discs = [6, 7, 10, 14, 18, 19, 22, 26, 28, 39, 40, 43, 48, 53, 54, 56, 59, 60, 61, 65, 73, 74, 78, 86, 88, 92, 93, 94, 97, 98]
+  Greedy: value = 109.0, cost = 290.0, discs = [6, 7, 10, 14, 18, 19, 22, 26, 28, 39, 40, 43, 48, 53, 54, 56, 59, 60, 61, 65, 72, 73, 74, 86, 88, 92, 93, 94, 97, 98]
+User 81:
+  GA: value = 87.0, cost = 204.0, discs = [6, 14, 18, 19, 22, 28, 30, 37, 39, 43, 48, 53, 56, 59, 61, 65, 70, 73, 84, 86, 93, 94, 98]
+  Greedy: value = 87.0, cost = 203.0, discs = [14, 18, 19, 22, 28, 30, 37, 39, 43, 48, 53, 56, 59, 61, 65, 70, 73, 74, 84, 86, 93, 94, 98]
+User 82:
+  GA: value = 95.0, cost = 232.0, discs = [6, 7, 14, 18, 22, 23, 30, 33, 48, 53, 56, 57, 60, 61, 71, 72, 73, 74, 78, 86, 88, 92, 93, 97, 98]
+  Greedy: value = 95.0, cost = 227.0, discs = [6, 7, 14, 18, 19, 22, 23, 30, 33, 39, 40, 43, 53, 56, 57, 60, 61, 71, 72, 73, 74, 78, 86, 92, 93, 97, 98]
+User 83:
+  GA: value = 102.0, cost = 286.0, discs = [4, 6, 7, 10, 14, 18, 19, 25, 28, 37, 39, 40, 43, 53, 54, 56, 60, 61, 70, 71, 72, 73, 74, 86, 88, 92, 93, 94, 97, 98]
+  Greedy: value = 101.0, cost = 275.0, discs = [4, 6, 7, 10, 14, 17, 18, 19, 37, 39, 40, 43, 53, 54, 56, 60, 61, 70, 71, 72, 73, 74, 79, 84, 86, 92, 93, 94, 97, 98]
+User 84:
+  GA: value = 102.0, cost = 299.0, discs = [4, 6, 10, 14, 18, 19, 22, 29, 40, 43, 53, 54, 56, 57, 59, 61, 70, 72, 73, 74, 84, 88, 89, 94, 96, 97, 98]
+  Greedy: value = 105.0, cost = 298.0, discs = [4, 6, 10, 14, 18, 19, 22, 28, 39, 40, 43, 53, 54, 56, 57, 59, 60, 61, 70, 72, 73, 74, 84, 88, 89, 93, 94, 96, 97, 98]
+User 85:
+  GA: value = 97.0, cost = 288.0, discs = [6, 7, 10, 14, 18, 19, 25, 28, 30, 40, 43, 53, 56, 60, 61, 71, 72, 73, 74, 86, 88, 92, 93, 94, 95, 96, 97, 98]
+  Greedy: value = 98.0, cost = 288.0, discs = [6, 7, 10, 14, 17, 18, 19, 28, 30, 39, 40, 43, 53, 56, 60, 61, 70, 72, 73, 74, 86, 88, 92, 93, 94, 95, 96, 97, 98]
+User 86:
+  GA: value = 99.0, cost = 243.0, discs = [4, 6, 7, 10, 14, 18, 22, 23, 28, 39, 40, 43, 53, 56, 57, 59, 60, 61, 70, 71, 72, 73, 74, 84, 93, 94, 97, 98]
+  Greedy: value = 99.0, cost = 242.0, discs = [4, 6, 7, 10, 14, 18, 22, 23, 28, 39, 40, 43, 53, 56, 57, 59, 60, 61, 70, 71, 72, 73, 74, 78, 93, 94, 97, 98]
+User 87:
+  GA: value = 93.0, cost = 210.0, discs = [4, 6, 7, 14, 18, 19, 22, 23, 33, 37, 39, 48, 53, 54, 56, 61, 71, 72, 73, 74, 78, 93, 94, 97, 98]
+  Greedy: value = 94.0, cost = 205.0, discs = [4, 6, 7, 10, 14, 18, 19, 22, 23, 28, 39, 48, 53, 54, 56, 61, 71, 72, 73, 74, 78, 93, 94, 97, 98]
+User 88:
+  GA: value = 94.0, cost = 211.0, discs = [6, 7, 14, 18, 19, 22, 28, 39, 40, 43, 48, 56, 57, 61, 70, 71, 72, 73, 74, 78, 84, 86, 93, 97, 98]
+  Greedy: value = 94.0, cost = 209.0, discs = [4, 6, 7, 14, 18, 19, 22, 28, 39, 40, 43, 48, 53, 56, 57, 61, 70, 71, 72, 73, 74, 78, 86, 93, 97, 98]
+User 89:
+  GA: value = 86.0, cost = 233.0, discs = [6, 7, 10, 12, 14, 18, 26, 30, 48, 53, 54, 56, 59, 61, 70, 71, 72, 74, 84, 86, 92, 93, 98]
+  Greedy: value = 86.0, cost = 229.0, discs = [6, 7, 10, 14, 18, 26, 30, 37, 39, 48, 53, 54, 56, 59, 61, 70, 71, 72, 73, 74, 84, 86, 92, 93, 98]
+User 90:
+  GA: value = 90.0, cost = 243.0, discs = [6, 7, 14, 18, 22, 26, 28, 39, 40, 43, 54, 56, 60, 61, 65, 70, 71, 73, 74, 78, 79, 86, 89, 93, 98]
+  Greedy: value = 90.0, cost = 239.0, discs = [6, 7, 14, 18, 19, 22, 26, 28, 39, 40, 43, 53, 54, 56, 57, 60, 61, 70, 71, 73, 74, 78, 86, 89, 93, 97, 98]
+User 91:
+  GA: value = 90.0, cost = 241.0, discs = [4, 6, 7, 14, 18, 33, 36, 40, 41, 45, 53, 56, 61, 65, 70, 71, 72, 73, 74, 86, 92, 93, 97]
+  Greedy: value = 91.0, cost = 243.0, discs = [4, 6, 7, 14, 18, 33, 39, 40, 53, 56, 60, 61, 65, 70, 71, 72, 73, 74, 79, 86, 88, 92, 93, 95, 97, 98]
+User 92:
+  GA: value = 95.0, cost = 255.0, discs = [4, 6, 10, 14, 18, 19, 22, 23, 39, 43, 48, 54, 56, 57, 59, 60, 61, 70, 72, 73, 74, 84, 86, 88, 93, 94, 97, 98]
+  Greedy: value = 95.0, cost = 250.0, discs = [4, 6, 10, 14, 18, 19, 22, 23, 39, 43, 48, 53, 54, 56, 57, 59, 60, 61, 70, 72, 73, 74, 78, 84, 86, 93, 94, 97, 98]
+User 93:
+  GA: value = 86.0, cost = 226.0, discs = [7, 14, 17, 18, 19, 39, 43, 53, 56, 57, 59, 61, 65, 70, 72, 73, 74, 79, 86, 92, 93, 94, 95]
+  Greedy: value = 86.0, cost = 224.0, discs = [7, 14, 18, 19, 23, 30, 39, 43, 53, 56, 57, 59, 61, 65, 72, 73, 74, 79, 86, 92, 93, 94, 95, 98]
+User 94:
+  GA: value = 93.0, cost = 274.0, discs = [6, 7, 10, 14, 17, 18, 22, 23, 25, 26, 30, 39, 43, 46, 53, 56, 57, 60, 61, 70, 73, 74, 78, 84, 93, 97, 98]
+  Greedy: value = 96.0, cost = 276.0, discs = [4, 6, 7, 10, 14, 17, 18, 19, 22, 23, 26, 30, 39, 43, 48, 53, 54, 56, 57, 60, 61, 70, 73, 74, 78, 84, 86, 93, 97, 98]
+User 95:
+  GA: value = 96.0, cost = 242.0, discs = [6, 7, 10, 14, 18, 19, 22, 23, 30, 33, 37, 39, 40, 48, 53, 56, 57, 60, 71, 72, 73, 74, 89, 93, 94, 97, 98]
+  Greedy: value = 97.0, cost = 241.0, discs = [6, 7, 10, 14, 18, 19, 22, 23, 30, 33, 37, 39, 40, 43, 48, 53, 56, 57, 60, 61, 70, 71, 72, 73, 74, 93, 94, 97, 98]
+User 96:
+  GA: value = 97.0, cost = 220.0, discs = [6, 7, 14, 18, 19, 22, 40, 41, 43, 48, 53, 54, 56, 60, 61, 70, 72, 73, 74, 78, 84, 86, 93, 94]
+  Greedy: value = 98.0, cost = 218.0, discs = [6, 7, 14, 18, 19, 22, 23, 39, 40, 43, 48, 53, 54, 56, 60, 61, 70, 72, 73, 74, 78, 84, 86, 93, 94, 98]
+User 97:
+  GA: value = 105.0, cost = 274.0, discs = [7, 10, 14, 17, 18, 19, 22, 28, 37, 39, 40, 43, 53, 56, 60, 61, 70, 71, 72, 73, 74, 78, 84, 86, 93, 94, 96, 97]
+  Greedy: value = 104.0, cost = 264.0, discs = [6, 7, 10, 14, 18, 19, 22, 28, 37, 39, 40, 43, 53, 56, 60, 61, 65, 70, 71, 72, 73, 74, 86, 89, 93, 94, 96, 97, 98]
+User 98:
+  GA: value = 101.0, cost = 292.0, discs = [4, 5, 6, 7, 14, 18, 22, 23, 30, 39, 40, 43, 48, 53, 54, 56, 57, 59, 60, 61, 65, 70, 72, 73, 78, 89, 93, 97, 98]
+  Greedy: value = 104.0, cost = 288.0, discs = [4, 6, 7, 14, 18, 19, 22, 23, 28, 30, 39, 40, 43, 48, 53, 54, 56, 57, 60, 61, 65, 70, 72, 73, 74, 78, 89, 93, 94, 97, 98]
+User 99:
+  GA: value = 108.0, cost = 250.0, discs = [4, 6, 10, 14, 18, 23, 30, 33, 37, 39, 40, 43, 53, 54, 56, 59, 61, 70, 72, 73, 78, 79, 84, 86, 93, 97, 98]
+  Greedy: value = 108.0, cost = 248.0, discs = [4, 6, 10, 14, 18, 23, 30, 33, 37, 39, 40, 43, 48, 53, 54, 56, 61, 70, 72, 73, 74, 78, 79, 84, 86, 93, 97, 98]
+User 100:
+  GA: value = 102.0, cost = 222.0, discs = [4, 6, 7, 10, 14, 18, 19, 22, 30, 39, 43, 48, 53, 56, 60, 61, 65, 71, 72, 73, 74, 78, 86, 93, 95, 97, 98]
+  Greedy: value = 102.0, cost = 222.0, discs = [4, 6, 7, 10, 14, 18, 19, 22, 30, 39, 43, 48, 53, 56, 60, 61, 65, 71, 72, 73, 74, 78, 86, 93, 95, 97, 98]
+Comparison Counts:
+GA value > Greedy value: 6 times
+GA value = Greedy value: 30 times
+GA value < Greedy value: 64 times
+
+Above we see the comparison results of the genetic algorithm with the greedy selection algorithm. The genetic algorithm outperformed greedy 6 times, was equal 30 times, while underperforming (albeit by a small percentage) 64 times. The greedy algorithm is obviously a simple approach that makes the locally optimal choice at each stage in the hope of finding the global optimum. The genetic algorithm, on the other hand, is a more complex approach that uses mechanisms inspired by biological evolution, such as selection, crossover, and mutation. It is a "global" optimization algorithm and is capable of finding the overall optimal solution given enough time and computing resources. However, it is also a stochastic algorithm, meaning that it can give different results in different runs and is not guaranteed to find the overall optimum. The fact that the GA outperformed the greedy algorithm in some cases suggests that the GA was able to find better solutions that the greedy algorithm missed. However, the fact that the GA outperformed the greedy algorithm in most cases suggests that the GA may need more time or a larger population to find better solutions, or may need some tuning. After quite a bit of experimentation with the parameters, we settled on a combination that settled into a plateau. Even with an extremely large number of population/generations, the result either remained the same, or had an extremely minimal positive return. As the population size or number of generations increases, the algorithm has more opportunities to explore the solution space and potentially find better solutions. However, this also increases computational time because the algorithm must evaluate more individuals or run for more generations. This is related to the concept of "diminishing returns" as covered in the lectures. That is why it is crucial, based on the needs of the problem, to choose the population size and the number of generations based on the time and computing resources we have available, as well as the complexity of the problem. In addition, we can use techniques such as parallel computing to speed up calculations. But moving on to the techniques used: The application of different techniques, such as "elitism" and "tournament" selection, offered excellent improvement. Nevertheless, the result was the above. Of course this is not necessarily a negative "new", as it is worth noting that GA and the greedy algorithm have different strengths and weaknesses, and the best algorithm to use may depend on the specific problem and constraints. -For example, GA may be more suitable for problems where the search space is large and complex and it is important to find the overall optimum. The greedy algorithm, on the other hand, may be more suitable for problems where the search space is smaller or simpler, or where it is more important to find a good solution quickly. In conclusion, these results provide valuable information about the performance of the GA and the greedy algorithm on our problem and can guide us to further improve our approach and select the best algorithm for our needs. In conclusion, I became aware of the multifaceted phenomenon of the genetic algorithm, and became interested in the complexity of this technology. It is remarkable that from a natural function of real living organisms that has been carried out for millions of years, humans have once again taken inspiration from nature and turned a biological process into a computational problem-solving theory and technology.
+
